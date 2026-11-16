@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<meta name="description" content="배달 미션 포인트 계산 및 기록 앱">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>배달 포인트 매니저</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121d2e;--panel2:#1a2940;--line:#2b3a50;--text:#f4f7fb;--muted:#9aabc1;--blue:#6aa9ff;--green:#48d597;--red:#ff7777;--amber:#ffc66d}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#101a2b,#0b1220 260px);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button,input{font:inherit}button{cursor:pointer;color:inherit;border:1px solid var(--line);background:var(--panel2);border-radius:13px;padding:11px 13px;font-weight:650}
+button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:not-allowed}
+.app{max-width:620px;margin:auto;padding:18px 15px 36px}.top{display:flex;align-items:center;justify-content:space-between;margin:5px 2px 18px}.brand{font-size:20px;font-weight:850;letter-spacing:-.5px}.sub{font-size:11px;color:var(--muted);margin-top:3px}.status{font-size:11px;color:var(--green);border:1px solid #245a49;padding:6px 9px;border-radius:99px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px}.tab{background:#111c2c;color:var(--muted);padding:12px}.tab.active{background:#275a9b;border-color:#397ac7;color:white}
+.days{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0 16px}.day{padding:9px 3px;font-size:13px;background:#111c2c;color:var(--muted)}.day.active{background:#275a9b;color:#fff;border-color:#4b8bd5}
+.card{background:rgba(18,29,46,.96);border:1px solid var(--line);border-radius:18px;padding:15px;margin:12px 0}.card h2{font-size:15px;margin:0 0 12px}.muted{color:var(--muted)}.small{font-size:12px}.field{display:flex;flex-direction:column;gap:6px;margin:10px 0}.field label{font-size:12px;color:var(--muted)}input{width:100%;background:#0c1625;border:1px solid var(--line);border-radius:11px;padding:12px;color:var(--text);outline:none;min-width:0}input:focus{border-color:var(--blue)}
+.row{display:flex;align-items:center;gap:9px}.row>*{min-width:0}.between{justify-content:space-between}.grow{flex:1}.primary{background:#2b70bd;border-color:#3b85d8;color:white}.success{background:#17694d;border-color:#258c68;color:white}.danger{background:#4a2028;border-color:#793440;color:#ffd7dc}.ghost{background:transparent}.tiny{padding:7px 9px;font-size:12px;border-radius:9px}
+.point-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}.point{position:relative;display:flex;align-items:center;gap:7px;background:#18283d;border:1px solid #30445f;border-radius:13px;padding:9px 8px;min-width:0}.point-main{flex:1;text-align:left;background:transparent;border:0;padding:5px 2px;min-width:0}.point-value{font-size:18px;font-weight:850;display:block}.point-count{font-size:12px;color:var(--green);font-weight:750}.stepper{display:flex;flex-direction:column;gap:4px}.stepper button{width:29px;height:27px;padding:0;font-size:15px;border-radius:8px}.settings{align-self:flex-start;padding:4px 5px;background:transparent;border:0;color:var(--muted);font-size:17px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#0d1929;border:1px solid var(--line);border-radius:13px;padding:12px}.stat .label{font-size:11px;color:var(--muted)}.stat .num{font-size:24px;font-weight:850;margin-top:4px;font-variant-numeric:tabular-nums}
+.progress{height:9px;background:#25344a;border-radius:99px;overflow:hidden}.bar{height:100%;background:var(--blue);border-radius:99px;transition:width .2s}.bar.done{background:var(--green)}
+.notice{padding:12px;border-radius:12px;background:#18283d;color:var(--muted);font-size:12px;line-height:1.5}.record-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:13px;margin-top:10px}.record-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums}.record-table th,.record-table td{padding:11px 2px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line);overflow:hidden;text-overflow:clip}.record-table th:nth-child(1){width:27%}.record-table th:nth-child(2){width:14%}.record-table th:nth-child(3){width:29%}.record-table th:nth-child(4){width:20%}.record-table th:nth-child(5){width:10%}.record-table th{color:var(--muted);font-weight:650;background:#0e1928}.record-table td:first-child,.record-table th:first-child{text-align:left;padding-left:5px}.record-table .record-settings{padding:5px 2px;font-size:14px}.record-table tr:last-child td{border-bottom:0}.record-table .date-cell{font-weight:750}.record-table .points-cell{font-weight:750}.record-table .record-settings{padding:5px 8px;font-size:15px}
+.hidden{display:none!important}.modal-back{position:fixed;inset:0;background:#0009;display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:10}.modal{width:min(100%,600px);background:#172438;border:1px solid var(--line);border-radius:20px;padding:18px 16px 24px;max-height:85vh;overflow:auto}.modal h2{margin:0 0 12px;font-size:17px}.modal-actions{display:flex;gap:8px;margin-top:15px}.modal-actions button{flex:1}
+.footer{font-size:10px;text-align:center;color:#71839b;margin-top:22px}.empty{text-align:center;padding:30px 10px;color:var(--muted);font-size:13px}
+@media(min-width:500px){.app{padding-top:26px}.point-list{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+ <header class="top"><div><div class="brand">배달 포인트 매니저</div><div class="sub">운행 미션 · 포인트 계산 · 성공 기록</div></div><button class="tiny ghost" id="settingsBtn" aria-label="설정" title="설정" style="font-size:21px;padding:7px 10px">⚙</button></header>
+ <nav class="tabs"><button class="tab active" data-tab="drive">운행</button><button class="tab" data-tab="records">기록</button></nav>
+ <main id="driveView">
+  <div class="days" id="days"></div>
+  <section id="noMission" class="card"><h2>미션 시작</h2><p class="muted small">새 미션의 목표 포인트와 보상 금액을 설정해 주세요.</p><button class="primary" id="addMission" style="width:100%">＋ 새 미션 시작</button></section>
+  <section id="missionView" class="hidden">
+   <section class="card">
+    <div class="row between"><h2>미션 설정</h2><button class="tiny ghost" id="finishMission">미션 종료</button></div>
+    <div class="row">
+     <div class="field grow"><label for="goal">목표 포인트</label><input id="goal" type="number" min="1" step="1" inputmode="decimal" placeholder="예: 115"></div>
+     <div class="field grow"><label for="amount">달성 금액 (원)</label><input id="amount" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 85000"></div>
+    </div>
+    <div class="small muted">누적 포인트를 올림한 값이 목표 포인트 이상이면 성공입니다.</div>
+   </section>
+   <section class="card">
+    <div class="row between"><h2>포인트 목록</h2><span class="small muted" id="dayLabel"></span></div>
+    <div class="point-list" id="pointList"></div>
+    <div class="row" style="margin-top:12px"><input id="newPoint" type="number" min=".1" step=".1" inputmode="decimal" placeholder="포인트 입력 (예: 12.5)"><button class="primary" id="addPoint">추가</button></div>
+   </section>
+   <section class="card">
+    <div class="stats">
+     <div class="stat"><div class="label">총 배달 건수</div><div class="num" id="jobCount">0건</div></div>
+     <div class="stat"><div class="label">포인트</div><div class="num" id="pointTotal">0.0P</div></div>
+    </div>
+   </section>
+   <section class="card">
+    <div class="row between"><h2>미션 달성 현황</h2><strong id="missionBadge" class="small">진행 중</strong></div>
+    <div class="row between" style="margin:5px 0 10px"><strong style="font-size:25px" id="progressText">0.0P</strong><span class="small muted" id="ceilText">올림 결과: 0P</span></div>
+    <div class="progress"><div class="bar" id="progressBar" style="width:0%"></div></div>
+    <div class="small muted" id="remaining" style="margin-top:9px"></div>
+   </section>
+  </section>
+  <section class="card hidden" id="saveCard">
+   <h2>미션 기록 저장</h2><p class="small muted" style="margin:-5px 0 12px">미션 결과를 확인하고 저장을 눌러 기록에 추가하세요.</p>
+   <div class="field"><label for="recordDate">달성 날짜</label><input id="recordDate" type="date"></div>
+   <div class="small muted" id="dateWeekday"></div>
+   <div class="notice" id="saveSummary" style="margin-top:10px"></div>
+   <button class="success" id="saveRecord" style="width:100%;margin-top:12px">미션 기록 저장</button>
+  </section>
+  
+ </main>
+ <main id="recordsView" class="hidden"><div class="row between"><h2 style="font-size:16px">미션 성공 기록</h2><span class="small muted" id="recordCount">0건</span></div><div id="recordList"></div></main>
+
+</div>
+<div id="modalRoot"></div>
+<script>
+const DAYS=['월','화','수','목','금','토','일','공휴일'];
+const defaultData=()=>({version:1,selectedDay:'월',days:Object.fromEntries(DAYS.map(d=>[d,{points:[9.6,11.2,15.2,16.8].map((v,i)=>({id:`${d}-${i+1}`,value:v,count:0})) ,mission:{active:false,goal:'',amount:'',lastGoal:'',lastAmount:''}}])),records:[],nextId:1});
+let state=loadState(), deferredInstall=null, pendingDelete=null, editingRecord=null;
+function loadState(){try{const s=JSON.parse(localStorage.getItem('baedalPointData'));if(s&&s.version===1&&s.days)return s}catch(e){}return defaultData()}
+function persist(){try{localStorage.setItem('baedalPointData',JSON.stringify(state))}catch(e){alert('저장 공간이 부족합니다. 설정에서 백업 후 불필요한 데이터를 정리해 주세요.')}}
+function activeDay(){return state.days[state.selectedDay]}
+function total(){return activeDay().points.reduce((s,p)=>s+p.value*p.count,0)}
+function count(){return activeDay().points.reduce((s,p)=>s+p.count,0)}
+function goalNum(){return Number(activeDay().mission.goal)}
+function achieved(){const m=activeDay().mission;return m.active&&m.goal!==''&&Number.isFinite(goalNum())&&goalNum()>0&&Math.ceil(total()-1e-9)>=goalNum()}
+function weekday(date){const d=new Date(date+'T12:00:00');return ['일','월','화','수','목','금','토'][d.getDay()]}
+function formatDate(date){if(!date)return '';const [y,m,d]=date.split('-');return `${y.slice(2)}.${m}.${d} ${weekday(date)}`}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){
+ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===currentTab));
+ document.getElementById('driveView').classList.toggle('hidden',currentTab!=='drive');document.getElementById('recordsView').classList.toggle('hidden',currentTab!=='records');
+ document.getElementById('days').innerHTML=DAYS.map(d=>`<button class="day ${d===state.selectedDay?'active':''}" data-day="${d}">${d}</button>`).join('');
+ const m=activeDay().mission, isActive=m.active, ok=achieved(), savedPanel=!!m.savedPending;
+ document.getElementById('noMission').classList.toggle('hidden',isActive||savedPanel);
+ document.getElementById('missionView').classList.toggle('hidden',!isActive);
+ document.getElementById('saveCard').classList.toggle('hidden',!savedPanel);
+ document.getElementById('dayLabel').textContent=state.selectedDay;
+ if(isActive){
+  document.getElementById('goal').value=m.goal;document.getElementById('amount').value=m.amount;
+  document.getElementById('pointList').innerHTML=[...activeDay().points].sort((a,b)=>a.value-b.value).map(p=>`<div class="point"><button class="point-main" data-inc="${esc(p.id)}"><span class="point-value">${p.value.toFixed(1)}P</span><span class="point-count">${p.count}건</span></button><div class="stepper"><button data-up="${esc(p.id)}" aria-label="한 건 추가">＋</button><button data-down="${esc(p.id)}" ${p.count===0?'disabled':''} aria-label="한 건 감소">−</button></div><button class="settings" data-settings="${esc(p.id)}" aria-label="항목 설정">⋮</button></div>`).join('')||'<div class="notice">포인트 항목이 없습니다. 아래에서 추가하세요.</div>';
+  document.getElementById('jobCount').textContent=count()+'건';document.getElementById('pointTotal').textContent=total().toFixed(1)+'P';document.getElementById('progressText').textContent=total().toFixed(1)+'P';document.getElementById('ceilText').textContent=`올림 결과: ${Math.ceil(total()-1e-9)}P`;
+  document.getElementById('missionBadge').textContent=ok?'달성 성공':'진행 중';document.getElementById('missionBadge').style.color=ok?'var(--green)':'var(--amber)';
+  const pct=Math.min(100,total()/Math.max(1,goalNum())*100);document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressBar').classList.toggle('done',ok);
+  document.getElementById('remaining').textContent=ok?'미션 성공! 종료 후 날짜와 금액을 확인해 기록을 저장하세요.':`목표 ${m.goal||'—'}P까지 올림 기준 ${Math.max(0,goalNum()-Math.ceil(total()-1e-9))}P 남음`;
+  document.getElementById('finishMission').disabled=!ok;
+ }
+ if(savedPanel){document.getElementById('recordDate').value=m.pendingDate||today();document.getElementById('dateWeekday').textContent=formatDate(document.getElementById('recordDate').value);document.getElementById('saveSummary').textContent=`${state.selectedDay}요일 미션 · 배달 ${count()}건 · 달성 ${total().toFixed(1)}P / 목표 ${m.goal}P · 보상 ${Number(m.amount).toLocaleString('ko-KR')}원`;}
+ renderRecords();
+}
+let currentTab='drive';function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function renderRecords(){const list=document.getElementById('recordList');document.getElementById('recordCount').textContent=state.records.length+'건';if(!state.records.length){list.innerHTML='<div class="empty">아직 저장된 기록이 없습니다.<br>운행 화면에서 미션 성공 후 저장해 주세요.</div>';return}
+ const rows=[...state.records].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created).map(r=>`<tr><td class="date-cell">${formatDate(r.date)}</td><td>${r.count}건</td><td class="points-cell">${Number(r.points).toFixed(1)}P <span class="muted" style="font-size:9px;font-weight:500">/ ${r.goal}P</span></td><td>${Number(r.amount).toLocaleString('ko-KR')}원</td><td><button class="tiny ghost record-settings" data-record-settings="${r.id}" aria-label="기록 설정">⚙</button></td></tr>`).join('');
+ list.innerHTML=`<div class="record-wrap"><table class="record-table"><thead><tr><th>날짜</th><th>배달건수</th><th>포인트</th><th>보상</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`}
+function showModal(html){document.getElementById('modalRoot').innerHTML=`<div class="modal-back" id="modalBack"><div class="modal">${html}</div></div>`;document.getElementById('modalBack').addEventListener('click',e=>{if(e.target.id==='modalBack')closeModal()})}
+function closeModal(){document.getElementById('modalRoot').innerHTML=''}
+function beginMission(){const m=activeDay().mission;m.active=true;m.goal=m.lastGoal||'';m.amount=m.lastAmount||'';m.savedPending=false;activeDay().points.forEach(p=>p.count=0);persist();render()}
+function finishMission(){const m=activeDay().mission;m.lastGoal=m.goal;m.lastAmount=m.amount;m.active=false;m.savedPending=true;m.pendingDate=today();persist();render()}
+function saveRecord(){const m=activeDay().mission,date=document.getElementById('recordDate').value;if(!date){alert('달성 날짜를 선택해 주세요.');return}state.records.push({id:state.nextId++,day:state.selectedDay,date,amount:m.amount,points:total(),count:count(),goal:m.goal,created:Date.now()});m.savedPending=false;m.active=false;m.goal='';m.amount='';activeDay().points.forEach(p=>p.count=0);persist();render();currentTab='records';render();alert('미션 기록을 저장했습니다. 운행 탭에서 같은 날짜의 새 미션을 추가할 수 있어요.')}
+function resetForNext(){const m=activeDay().mission;m.active=false;activeDay().points.forEach(p=>p.count=0);persist();render()}
+function openPointSettings(id){const p=activeDay().points.find(x=>x.id===id);if(!p)return;showModal(`<h2>포인트 항목 설정</h2><p class="muted small">${p.value.toFixed(1)}P 항목을 삭제할까요? 삭제하면 이 요일의 목록에서 계속 제거됩니다.</p><div class="modal-actions"><button class="ghost" id="cancelModal">취소</button><button class="danger" id="deletePoint">삭제하기</button></div>`);document.getElementById('cancelModal').onclick=closeModal;document.getElementById('deletePoint').onclick=()=>{activeDay().points=activeDay().points.filter(x=>x.id!==id);persist();closeModal();render()}}
+function openRecordSettings(id){const r=state.records.find(x=>x.id===id);if(!r)return;showModal(`<h2>기록 관리</h2><div class="field"><label>달성 날짜</label><input id="editDate" type="date" value="${r.date}"></div><div class="small muted" id="editWeekday">${formatDate(r.date)}</div><div class="field"><label>달성 금액 (원)</label><input id="editAmount" type="number" inputmode="numeric" value="${r.amount}"></div><div class="modal-actions"><button class="danger" id="deleteRecord">삭제</button><button class="ghost" id="cancelModal">취소</button><button class="primary" id="updateRecord">저장</button></div>`);document.getElementById('cancelModal').onclick=closeModal;document.getElementById('editDate').onchange=e=>document.getElementById('editWeekday').textContent=formatDate(e.target.value);document.getElementById('deleteRecord').onclick=()=>{if(confirm('이 기록을 삭제할까요?')){state.records=state.records.filter(x=>x.id!==id);persist();closeModal();render()}};document.getElementById('updateRecord').onclick=()=>{r.date=document.getElementById('editDate').value;r.amount=document.getElementById('editAmount').value;persist();closeModal();render()}}
+function backup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`배달포인트백업-${today()}.json`;a.click();URL.revokeObjectURL(url)}
+function importBackup(file){const reader=new FileReader();reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!d.days||!d.records)throw Error();if(confirm('현재 앱 데이터를 백업 파일 내용으로 바꿀까요?')){state=d;persist();render();alert('복원했습니다.')}}catch(e){alert('올바른 백업 파일이 아닙니다.')} };reader.readAsText(file)}
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.tab){currentTab=t.dataset.tab;render()}
+ if(t.dataset.day){state.selectedDay=t.dataset.day;persist();render()}
+ if(t.id==='addMission')beginMission();
+ if(t.id==='finishMission')finishMission();
+ if(t.id==='saveRecord')saveRecord();
+ if(t.id==='startNext')resetForNext();
+ if(t.id==='settingsBtn')showModal(`<h2>설정</h2><p class="muted small">기록 데이터는 이 기기의 브라우저에 보관됩니다. 기기 변경이나 브라우저 데이터 삭제에 대비해 가끔 백업해 주세요.</p><div class="modal-actions"><button class="primary" id="exportData">백업 내보내기</button><button class="ghost" id="importData">백업 복원</button><button class="ghost" id="cancelModal">닫기</button></div><input type="file" id="backupFile" accept="application/json" class="hidden">`),document.getElementById('exportData')?.addEventListener('click',backup),document.getElementById('importData')?.addEventListener('click',()=>document.getElementById('backupFile').click()),document.getElementById('backupFile')?.addEventListener('change',e=>{if(e.target.files[0]){importBackup(e.target.files[0]);closeModal()}}),document.getElementById('cancelModal')?.addEventListener('click',closeModal);
+ if(t.id==='addPoint'){const input=document.getElementById('newPoint'),v=Number(input.value);if(!input.value||!Number.isFinite(v)||v<=0)return;activeDay().points.push({id:`custom-${state.nextId++}`,value:Math.round(v*10)/10,count:0});activeDay().points.sort((a,b)=>a.value-b.value);input.value='';persist();render()}
+ if(t.dataset.inc||t.dataset.up||t.dataset.down){const id=t.dataset.inc||t.dataset.up||t.dataset.down,p=activeDay().points.find(x=>x.id===id);if(p)p.count=Math.max(0,p.count+(t.dataset.down?-1:1));persist();render()}
+ if(t.dataset.settings)openPointSettings(t.dataset.settings);
+ if(t.dataset.recordSettings)openRecordSettings(Number(t.dataset.recordSettings));
+
+});
+['goal','amount'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{const m=activeDay().mission;m[id]=e.target.value;m.lastGoal=m.goal;m.lastAmount=m.amount;persist();renderProgressOnly()}));
+function renderProgressOnly(){if(!activeDay().mission.active)return;const ok=achieved();document.getElementById('missionBadge').textContent=ok?'달성 성공':'진행 중';document.getElementById('missionBadge').style.color=ok?'var(--green)':'var(--amber)';document.getElementById('progressText').textContent=total().toFixed(1)+'P';document.getElementById('ceilText').textContent=`올림 결과: ${Math.ceil(total()-1e-9)}P`;document.getElementById('progressBar').style.width=Math.min(100,total()/Math.max(1,goalNum())*100)+'%';document.getElementById('progressBar').classList.toggle('done',ok);document.getElementById('remaining').textContent=ok?'미션 성공! 종료 후 날짜와 금액을 확인해 기록을 저장하세요.':`목표 ${activeDay().mission.goal||'—'}P까지 올림 기준 ${Math.max(0,goalNum()-Math.ceil(total()-1e-9))}P 남음`;document.getElementById('finishMission').disabled=!ok}
+document.getElementById('recordDate').addEventListener('change',e=>document.getElementById('dateWeekday').textContent=formatDate(e.target.value));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e});
+render();
+</script>
+</body></html>
