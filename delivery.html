@@ -83,9 +83,9 @@ function loadState(){try{const s=JSON.parse(localStorage.getItem('baedalPointDat
 function persist(){try{localStorage.setItem('baedalPointData',JSON.stringify(state))}catch(e){alert('저장 공간이 부족합니다. 설정에서 백업 후 불필요한 데이터를 정리해 주세요.')}}
 function activeDay(){return state.days[state.selectedDay]}
 function total(){return activeDay().points.reduce((s,p)=>s+p.value*p.count,0)}
-function count(){const m=activeDay().mission;return Number.isFinite(Number(m.jobCount))?Number(m.jobCount):activeDay().points.reduce((s,p)=>s+p.count,0)}
+function count(){return activeDay().points.reduce((s,p)=>s+(Number(p.count)||0),0)}
 function goalNum(){return Number(activeDay().mission.goal)}
-function achieved(){const m=activeDay().mission,hasP=m.goal!==''&&Number(m.goal)>0,hasC=m.goalCount!==''&&Number(m.goalCount)>0;if(!m.active||(!hasP&&!hasC))return false;return (!hasP||Math.ceil(total()-1e-9)>=Number(m.goal))&&(!hasC||count()>=Number(m.goalCount))}
+function achieved(){const m=activeDay().mission,hasP=m.goal!==''&&Number(m.goal)>0,hasC=m.goalCount!==''&&Number(m.goalCount)>0;if(!m.active||(!hasP&&!hasC))return false;return hasP?Math.ceil(total()-1e-9)>=Number(m.goal):count()>=Number(m.goalCount)}
 function weekday(date){const d=new Date(date+'T12:00:00');return ['일','월','화','수','목','금','토'][d.getDay()]}
 function formatDate(date){if(!date)return '';const [y,m,d]=date.split('-');return `${y.slice(2)}.${m}.${d} ${weekday(date)}`}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -107,16 +107,16 @@ function render(){
   document.getElementById('remaining').textContent=ok?'목표 달성! 미션 종료를 눌러 기록을 저장하세요.':`포인트 ${m.goal?Math.max(0,goalNum()-Math.ceil(total()-1e-9))+'P 남음':'목표 미설정'} · 건수 ${m.goalCount?Math.max(0,Number(m.goalCount)-count())+'건 남음':'목표 미설정'}${m.goal&&m.goalCount?' · 두 목표 모두 달성하면 성공':''}`;
   document.getElementById('finishMission').disabled=false;
  }
- if(savedPanel){document.getElementById('recordDate').value=m.pendingDate||today();document.getElementById('dateWeekday').textContent=formatDate(document.getElementById('recordDate').value);document.getElementById('saveSummary').textContent=`${state.selectedDay}요일 미션 · 배달 ${count()}건 · 달성 ${total().toFixed(1)}P / 목표 ${m.goal}P · 보상 ${Number(m.amount).toLocaleString('ko-KR')}원`;}
+ if(savedPanel){document.getElementById('recordDate').value=m.pendingDate||today();document.getElementById('dateWeekday').textContent=formatDate(document.getElementById('recordDate').value);document.getElementById('saveSummary').textContent=`${state.selectedDay}요일 미션 · 배달 ${count()}건 · 달성 ${total().toFixed(1)}P / 목표 ${m.goal?m.goal+'P':(m.goalCount||'-')+'건'} · 보상 ${Number(m.amount).toLocaleString('ko-KR')}원`;}
  renderRecords();
 }
 let currentTab='drive';function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function renderRecords(){const list=document.getElementById('recordList');document.getElementById('recordCount').textContent=state.records.length+'건';if(!state.records.length){list.innerHTML='<div class="empty">아직 저장된 기록이 없습니다.<br>운행 화면에서 미션 성공 후 저장해 주세요.</div>';return}
- const rows=[...state.records].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created).map(r=>`<tr><td class="date-cell">${formatDate(r.date)}</td><td>${r.count}건</td><td class="points-cell">${Number(r.points).toFixed(1)}P <span class="muted" style="font-size:9px;font-weight:500">/ ${r.goal}P</span></td><td>${Number(r.amount).toLocaleString('ko-KR')}원</td><td><button class="tiny ghost record-settings" data-record-settings="${r.id}" aria-label="기록 설정">⚙</button></td></tr>`).join('');
+ const rows=[...state.records].sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created).map(r=>`<tr><td class="date-cell">${formatDate(r.date)}</td><td>${r.count}건</td><td class="points-cell">${Number(r.points).toFixed(1)}P <span class="muted" style="font-size:9px;font-weight:500">/ ${r.goal?`${r.goal}P 목표`:`${r.goalCount||r.count}건 목표`}</span></td><td>${Number(r.amount).toLocaleString('ko-KR')}원</td><td><button class="tiny ghost record-settings" data-record-settings="${r.id}" aria-label="기록 설정">⚙</button></td></tr>`).join('');
  list.innerHTML=`<div class="record-wrap"><table class="record-table"><thead><tr><th>날짜</th><th>배달건수</th><th>포인트</th><th>보상</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`}
 function showModal(html){document.getElementById('modalRoot').innerHTML=`<div class="modal-back" id="modalBack"><div class="modal">${html}</div></div>`;document.getElementById('modalBack').addEventListener('click',e=>{if(e.target.id==='modalBack')closeModal()})}
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}
-function beginMission(){const m=activeDay().mission;m.active=true;m.goal=m.lastGoal||'';m.goalCount=m.lastGoalCount||'';m.amount=m.lastAmount||'';m.jobCount=0;m.savedPending=false;activeDay().points.forEach(p=>p.count=0);persist();render()}
+function beginMission(){const m=activeDay().mission;m.active=true;m.goal=m.lastGoal||'';m.goalCount=m.goal?'':(m.lastGoalCount||'');m.amount=m.lastAmount||'';m.jobCount=0;m.savedPending=false;activeDay().points.forEach(p=>p.count=0);persist();render()}
 function finishMission(){const m=activeDay().mission;if(!achieved()){if(!confirm('목표에 도달하지 못했습니다. 이번 미션을 저장하지 않고 종료할까요?'))return;m.active=false;m.savedPending=false;m.goal='';m.goalCount='';m.amount='';m.jobCount=0;activeDay().points.forEach(p=>p.count=0);persist();render();return}m.lastGoal=m.goal;m.lastGoalCount=m.goalCount;m.lastAmount=m.amount;m.active=false;m.savedPending=true;m.pendingDate=today();persist();render()}
 function cancelMission(){finishMission()}
 function saveRecord(){const m=activeDay().mission,date=document.getElementById('recordDate').value;if(!date){alert('달성 날짜를 선택해 주세요.');return}state.records.push({id:state.nextId++,day:state.selectedDay,date,amount:m.amount,points:total(),count:count(),goal:m.goal,goalCount:m.goalCount||'',created:Date.now()});m.savedPending=false;m.active=false;m.goal='';m.goalCount='';m.amount='';m.jobCount=0;activeDay().points.forEach(p=>p.count=0);persist();render();currentTab='records';render();alert('미션 기록을 저장했습니다. 운행 탭에서 같은 날짜의 새 미션을 추가할 수 있어요.')}
@@ -142,7 +142,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
  if(t.dataset.recordSettings)openRecordSettings(Number(t.dataset.recordSettings));
 
 });
-['goal','goalCount','amount'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{const m=activeDay().mission;m[id]=e.target.value;m.lastGoal=m.goal;m.lastGoalCount=m.goalCount;m.lastAmount=m.amount;persist();renderProgressOnly()}));
+['goal','goalCount','amount'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{const m=activeDay().mission;m[id]=e.target.value;if(id==='goal'&&e.target.value){m.goalCount='';document.getElementById('goalCount').value=''}if(id==='goalCount'&&e.target.value){m.goal='';document.getElementById('goal').value=''}m.lastGoal=m.goal;m.lastGoalCount=m.goalCount;m.lastAmount=m.amount;persist();renderProgressOnly()}));
 function renderProgressOnly(){if(!activeDay().mission.active)return;const ok=achieved();document.getElementById('missionBadge').textContent=ok?'달성 성공':'진행 중';document.getElementById('missionBadge').style.color=ok?'var(--green)':'var(--amber)';document.getElementById('progressText').textContent=total().toFixed(1)+'P';document.getElementById('ceilText').textContent=`올림 결과: ${Math.ceil(total()-1e-9)}P`;document.getElementById('progressBar').style.width=(activeDay().mission.goal?Math.min(100,total()/Math.max(1,goalNum())*100):(activeDay().mission.goalCount?Math.min(100,count()/Math.max(1,Number(activeDay().mission.goalCount))*100):0))+'%';document.getElementById('progressBar').classList.toggle('done',ok);document.getElementById('remaining').textContent=ok?'목표 달성! 미션 종료를 눌러 기록을 저장하세요.':`포인트 ${activeDay().mission.goal?Math.max(0,goalNum()-Math.ceil(total()-1e-9))+'P 남음':'목표 미설정'} · 건수 ${activeDay().mission.goalCount?Math.max(0,Number(activeDay().mission.goalCount)-count())+'건 남음':'목표 미설정'}`;document.getElementById('finishMission').disabled=false}
 // 4-minute quick timer. The browser may throttle timers while the page is backgrounded.
 let fourTimerInterval=null,fourTimerEnd=0,fourTimerRemaining=240,fourAudioContext=null;
@@ -151,6 +151,20 @@ function beepThree(){try{const ctx=fourAudioContext;if(!ctx)return;ctx.resume();
 function stopFourTimer(reset=false){if(fourTimerInterval){clearInterval(fourTimerInterval);fourTimerInterval=null}if(reset)fourTimerRemaining=240;paintFourTimer()}
 function toggleFourTimer(){if(fourTimerInterval){stopFourTimer(true);return}if(!fourAudioContext){const C=window.AudioContext||window.webkitAudioContext;if(C)fourAudioContext=new C()}if(fourAudioContext)fourAudioContext.resume();if(fourTimerRemaining<=0)fourTimerRemaining=240;fourTimerEnd=Date.now()+fourTimerRemaining*1000;paintFourTimer();fourTimerInterval=setInterval(()=>{fourTimerRemaining=Math.max(0,Math.ceil((fourTimerEnd-Date.now())/1000));paintFourTimer();if(fourTimerRemaining<=0){clearInterval(fourTimerInterval);fourTimerInterval=null;fourTimerRemaining=240;paintFourTimer();beepThree();}},250);paintFourTimer()}
 paintFourTimer();
+// v20: one target type only; point-item counters are the sole +/- controls.
+(function(){
+ const goal=document.getElementById('goal'),goalCount=document.getElementById('goalCount');
+ const stats=document.querySelector('#missionView .stats');
+ if(stats){const first=stats.querySelector('.stat');const stepper=first?.querySelector('.stepper');stepper?.remove();}
+ // Remove any legacy bottom job-count controls if present.
+ document.querySelectorAll('#jobPlus,#jobMinus').forEach(b=>b.remove());
+ // Clarify that each point row tracks both point value and delivered count.
+ const pointHeading=document.querySelector('#missionView #pointList')?.previousElementSibling;
+ if(pointHeading){const label=pointHeading.querySelector('h2');if(label)label.textContent='포인트별 배달 건수';}
+ const sync=()=>{if(goal.value&&Number(goal.value)>0){goalCount.value='';activeDay().mission.goalCount=''}else if(goalCount.value&&Number(goalCount.value)>0){goal.value='';activeDay().mission.goal=''}persist();renderProgressOnly()};
+ goal.addEventListener('input',sync);goalCount.addEventListener('input',sync);
+ const oldRender=render;render=function(){oldRender();const m=activeDay().mission;if(m.active){goal.value=m.goal||'';goalCount.value=m.goalCount||'';const note=document.querySelector('#missionView .card .small.muted');if(note)note.textContent=m.goal?'포인트 목표 또는 건수 목표 중 하나만 입력할 수 있습니다.':(m.goalCount?'건수 목표 또는 포인트 목표 중 하나만 입력할 수 있습니다.':'포인트 목표와 건수 목표 중 하나를 입력해 주세요.');}};
+})();
 document.getElementById('recordDate').addEventListener('change',e=>document.getElementById('dateWeekday').textContent=formatDate(e.target.value));
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e});
