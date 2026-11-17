@@ -825,6 +825,47 @@ renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  renderTodos();renderShops();
 })();
 
+/* v26 purchase screen final fix: one input and one working add button only. */
+(function(){
+ const input=document.getElementById('shopInput');
+ const add=document.getElementById('addShop');
+ const section=document.getElementById('shopping');
+ if(!section||!input||!add)return;
+ // Remove every legacy/duplicate add control injected by earlier revisions.
+ section.querySelectorAll('.add-fab,.shop-add-toggle,[data-shop-add-toggle]').forEach(el=>el.remove());
+ section.querySelectorAll('button').forEach(btn=>{
+   if(btn!==add && /살\s*것\s*추가|구매\s*추가|추가하기/.test(btn.textContent.trim()))btn.remove();
+ });
+ // The purchase entry area contains exactly the text field and its adjacent add button.
+ const panel=input.closest('.panel');
+ if(panel){
+   panel.querySelectorAll('.toolbar,#shopCategory,#shopPrice,#shopSearch,#shopSummary').forEach(el=>el.remove());
+   panel.classList.remove('hidden');
+ }
+ const row=input.closest('.inputrow');
+ if(row){row.style.display='flex';row.style.alignItems='center';row.style.gap='7px';row.style.margin='0';}
+ input.placeholder='구매할 물건 입력';
+ input.classList.add('field');
+ add.type='button';
+ add.textContent='추가';
+ add.style.flex='0 0 auto';
+ add.style.minWidth='58px';
+ add.style.padding='10px 13px';
+ // Replace all earlier handlers. Do not read removed category/price/search elements.
+ add.onclick=function(){
+   const text=input.value.trim();
+   if(!text){input.focus();return;}
+   if(!Array.isArray(data.shops))data.shops=[];
+   data.shops.push({id:uid(),text,done:false,createdAt:Date.now()});
+   input.value='';
+   save();
+   renderShops();
+   if(typeof renderDashboard==='function')renderDashboard();
+   input.focus();
+ };
+ input.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();add.click();}};
+})();
+
 renderCalendar();renderWeekSummary();
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script></body></html>
