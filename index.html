@@ -142,6 +142,34 @@ function openSection(id){document.getElementById('home').classList.toggle('hidde
  }
 })();
 
+
+/* v25 corrections: reliable purchase add, compact inline inventory table, consistent section naming */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Remove the redundant standalone shopping add button left by older revisions.
+ document.querySelectorAll('#shopping .add-fab, #shopping .shop-add-toggle').forEach(el=>el.remove());
+ const shopInput=$('shopInput'),addShop=$('addShop');
+ if(addShop&&shopInput){
+   addShop.onclick=()=>{const text=shopInput.value.trim();if(!text){shopInput.focus();return}if(!Array.isArray(data.shops))data.shops=[];data.shops.push({id:uid(),text,done:false,createdAt:Date.now()});shopInput.value='';save();renderShops();shopInput.focus();if(typeof renderDashboard==='function')renderDashboard();};
+   shopInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addShop.click()}};
+ }
+ // The section name is consistently 근식당 in both the home tile and its page title.
+ document.querySelectorAll('[data-open="cooking"] strong').forEach(el=>el.textContent='근식당');
+ const cookingTitle=$('#cooking .topline h2');if(cookingTitle)cookingTitle.textContent='근식당';
+ // Inventory is an Excel-like compact table: name / capacity / quantity / actions.
+ const css=document.createElement('style');css.textContent=`
+ #inventory .v25-item-row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.72fr) minmax(0,.55fr) 94px;gap:5px;align-items:center;padding:8px 5px;margin:0;border:0;border-bottom:1px solid #e5eaf0;border-radius:0;background:#fff;font-size:12px;min-width:0}
+ #inventory .v25-item-head{position:sticky;top:0;background:#f2f5f9;font-weight:800;color:#617087;border-bottom:1px solid #dce3eb;z-index:1}
+ #inventory .v25-item-row>span{min-width:0;overflow-wrap:anywhere}
+ #inventory .v25-item-name{font-weight:700;color:#20334d}
+ #inventory .v25-item-capacity,#inventory .v25-item-qty{color:#52647b}
+ #inventory .v25-item-actions{display:flex;gap:3px;justify-content:flex-end;min-width:0}
+ #inventory .v25-item-actions button{padding:5px 6px!important;font-size:11px!important;min-height:28px}
+ #inventory .v23-inline-space{padding:8px}
+ @media(max-width:380px){#inventory .v25-item-row{grid-template-columns:minmax(0,1.15fr) minmax(0,.62fr) minmax(0,.48fr) 82px;gap:3px;font-size:11px}#inventory .v25-item-actions button{padding:4px 5px!important;font-size:10px!important}}
+ `;document.head.appendChild(css);
+})();
+
 renderCalendar();renderWeekSummary();}document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id));if(id==='todo')renderTodos();if(id==='shopping')renderShops();if(id==='cooking'){renderRecipes();document.getElementById('recipeDetail').classList.add('hidden')}if(id==='diary'){renderDiaries();if(!document.getElementById('diaryDate').value)document.getElementById('diaryDate').value=today()}if(id==='inventory'){renderSpaces();resetInventoryForm()}if(id==='workout'){document.getElementById('workDateLabel').textContent=today();renderWorkoutHistory()}window.scrollTo(0,0)}
 window.openSection=openSection;
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.open&&!b.hasAttribute('onclick'))openSection(b.dataset.open);if(b.hasAttribute('data-home')&&!b.hasAttribute('onclick'))openSection('home')});
@@ -730,10 +758,10 @@ renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  const allSpaces=()=>Array.isArray(data.spaces)?data.spaces:[];
  function setView(view){$('v23ItemsView').classList.toggle('hidden',view!=='items');$('v23SpacesView').classList.toggle('hidden',view!=='spaces');$('v23SpaceContents').classList.add('hidden');$('v23ShowItems').classList.toggle('active',view==='items');$('v23ShowSpaces').classList.toggle('active',view==='spaces');currentOpenSpace=null;if(view==='items')drawItems();else drawSpaces()}
  function spaceName(id){return allSpaces().find(s=>s.id===id)?.name||'위치 미지정'}
- function drawItems(){const q=$('v23InvSearch').value.trim().toLocaleLowerCase();let arr=allItems().filter(x=>!q||String(x.name||'').toLocaleLowerCase().includes(q));arr.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));$('v23AllItems').innerHTML=arr.length?arr.map(itemRow).join(''):'<div class="empty">등록된 물건이 없어요. 물건 추가를 눌러 등록해 주세요.</div>'}
- function itemRow(x){return `<div class="v23-item-row"><div class="v23-item-main"><div class="v23-item-name">${escText(x.name)}</div><div class="v23-item-meta">${x.capacity?escText(x.capacity)+' · ':''}${escText(x.qty||'수량 미입력')} · ${escText(spaceName(x.spaceId))}${x.expiry?' · 유통기한 '+escText(x.expiry):''}</div></div><div class="v23-item-actions"><button class="soft" data-v23-edit-item="${escText(x.id)}">수정</button><button class="soft" data-v23-delete-item="${escText(x.id)}">삭제</button></div></div>`}
+ function drawItems(){const q=$('v23InvSearch').value.trim().toLocaleLowerCase();let arr=allItems().filter(x=>!q||String(x.name||'').toLocaleLowerCase().includes(q));arr.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));$('v23AllItems').innerHTML=arr.length?`<div class="v25-item-row v25-item-head"><span>이름</span><span>용량</span><span>갯수</span><span></span></div>${arr.map(itemRow).join('')}`:'<div class="empty">등록된 물건이 없어요. 물건 추가를 눌러 등록해 주세요.</div>'}
+ function itemRow(x){return `<div class="v23-item-row v25-item-row"><span class="v25-item-name">${escText(x.name)}</span><span class="v25-item-capacity">${escText(x.capacity||'-')}</span><span class="v25-item-qty">${escText(x.qty||'-')}</span><span class="v23-item-actions v25-item-actions"><button class="soft" data-v23-edit-item="${escText(x.id)}">수정</button><button class="soft" data-v23-delete-item="${escText(x.id)}">삭제</button></span></div>`}
  function drawSpaces(){const q=$('v23InvSearch').value.trim().toLocaleLowerCase();const arr=allSpaces().filter(s=>!q||String(s.name||'').toLocaleLowerCase().includes(q));$('v23SpaceList').innerHTML=arr.length?arr.map(sp=>`<div class="v23-space-row"><button class="v23-space-open" type="button" data-v23-open-space="${escText(sp.id)}">${sp.photo?`<img src="${sp.photo}" alt="">`:`<span class="v23-space-icon">${escText(sp.icon||'📦')}</span>`}<span class="v23-space-text"><strong>${escText(sp.name)}</strong><small>${allItems().filter(x=>x.spaceId===sp.id).length}개 물품</small></span></button><div class="v23-space-actions"><button type="button" class="soft" data-v23-edit-space="${escText(sp.id)}">설정</button></div></div>`).join(''):'<div class="empty">등록된 공간이 없어요. 공간 추가를 눌러 주세요.</div>'}
- function drawSpaceContents(id){const sp=allSpaces().find(s=>s.id===id);if(!sp)return;currentOpenSpace=id;const arr=allItems().filter(x=>x.spaceId===id).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));$('v23SpaceContents').classList.remove('hidden');$('v23SpaceContents').innerHTML=`<div class="v23-inline-space"><h3>${escText(sp.name)} · ${arr.length}개 물품</h3>${arr.length?arr.map(itemRow).join(''):'<div class="empty">이 공간에 등록된 물건이 없어요.</div>'}<button type="button" class="primary" style="width:100%;margin-top:8px" id="v23AddItemInSpace">＋ 이 공간에 물건 추가</button></div>`;$('v23AddItemInSpace').onclick=()=>openItemModal(null,id)}
+ function drawSpaceContents(id){const sp=allSpaces().find(s=>s.id===id);if(!sp)return;currentOpenSpace=id;const arr=allItems().filter(x=>x.spaceId===id).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));$('v23SpaceContents').classList.remove('hidden');$('v23SpaceContents').innerHTML=`<div class="v23-inline-space"><h3>${escText(sp.name)} · ${arr.length}개 물품</h3>${arr.length?`<div class="v25-item-row v25-item-head"><span>이름</span><span>용량</span><span>갯수</span><span></span></div>${arr.map(itemRow).join('')}`:'<div class="empty">이 공간에 등록된 물건이 없어요.</div>'}<button type="button" class="primary" style="width:100%;margin-top:8px" id="v23AddItemInSpace">＋ 이 공간에 물건 추가</button></div>`;$('v23AddItemInSpace').onclick=()=>openItemModal(null,id)}
  function refreshSpaceSelect(selected){$('v23ItemSpace').innerHTML=allSpaces().map(s=>`<option value="${escText(s.id)}">${escText(s.name)}</option>`).join('');if(selected)$('v23ItemSpace').value=selected}
  function openItemModal(id=null,spaceId=null){editingItemId=id;const x=id?allItems().find(v=>v.id===id):null;$('v23ItemModalTitle').textContent=x?'물건 수정':'물건 추가';$('v23ItemName').value=x?.name||'';$('v23ItemCapacity').value=x?.capacity||'';$('v23ItemQty').value=x?.qty||'';refreshSpaceSelect(spaceId||x?.spaceId||allSpaces()[0]?.id);$('v23ExpiryOn').checked=!!x?.expiry;$('v23Expiry').value=x?.expiry||'';$('v23Expiry').classList.toggle('hidden',!x?.expiry);$('v23ItemCancelEdit').classList.toggle('hidden',!x);$('v23ItemModal').classList.remove('hidden')}
  function closeItemModal(){$('v23ItemModal').classList.add('hidden');editingItemId=null}
@@ -763,9 +791,9 @@ renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  const todoList=$('todoList');
  if(todoList) todoList.addEventListener('click',e=>{
    const target=e.target.closest('[data-todo-edit]'); if(!target)return;
-   e.preventDefault();e.stopPropagation();
+   e.preventDefault();e.stopImmediatePropagation();
    const id=target.dataset.todoEdit,t=data.todos.find(x=>String(x.id)===String(id));if(!t)return;
-   const value=prompt('할 일 수정 (내용을 비우고 확인하면 삭제됩니다)',t.text);
+   const value=prompt('할 일 수정: 내용을 비우고 확인하면 삭제됩니다.',t.text);
    if(value===null)return;
    if(!value.trim()){
      if(confirm(`'${t.text}' 할 일을 삭제할까요?`)){data.todos=data.todos.filter(x=>String(x.id)!==String(id));save();renderTodos();if(typeof renderCalendar==='function')renderCalendar();}
@@ -780,7 +808,7 @@ renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  const shopPanel=$('shopInput')?.closest('.panel');
  if(shopPanel){shopPanel.classList.remove('hidden');shopPanel.querySelector('.shop-add-toggle')?.remove();const row=shopPanel.querySelector('.inputrow');if(row){row.style.display='flex';row.style.gap='7px'}if($('addShop')){$('addShop').style.flex='0 0 auto';$('addShop').style.padding='9px 13px';$('addShop').style.fontSize='13px'}}
  window.renderShops=function(){const list=$('shopList'),arr=[...data.shops].sort((a,b)=>Number(a.done)-Number(b.done));list.innerHTML=arr.length?arr.map(t=>`<div class="item ${t.done?'done':''}"><input type="checkbox" data-shop-check="${t.id}" ${t.done?'checked':''}><div class="itemtext" data-shop-edit="${t.id}" style="cursor:pointer">${esc(t.text)}</div></div>`).join(''):'<div class="empty">구매할 항목을 추가해 보세요.</div>'};
- const shopList=$('shopList');if(shopList)shopList.addEventListener('click',e=>{const target=e.target.closest('[data-shop-edit]');if(!target)return;e.preventDefault();e.stopPropagation();const id=target.dataset.shopEdit,t=data.shops.find(x=>String(x.id)===String(id));if(!t)return;const value=prompt('구매 항목 수정 (내용을 비우고 확인하면 삭제됩니다)',t.text);if(value===null)return;if(!value.trim()){if(confirm(`'${t.text}' 항목을 삭제할까요?`)){data.shops=data.shops.filter(x=>String(x.id)!==String(id));save();renderShops()}return}t.text=value.trim();save();renderShops()},true);
+ const shopList=$('shopList');if(shopList)shopList.addEventListener('click',e=>{const target=e.target.closest('[data-shop-edit]');if(!target)return;e.preventDefault();e.stopImmediatePropagation();const id=target.dataset.shopEdit,t=data.shops.find(x=>String(x.id)===String(id));if(!t)return;const value=prompt('구매 항목 수정 (내용을 비우고 확인하면 삭제됩니다)',t.text);if(value===null)return;if(!value.trim()){if(confirm(`'${t.text}' 항목을 삭제할까요?`)){data.shops=data.shops.filter(x=>String(x.id)!==String(id));save();renderShops()}return}t.text=value.trim();save();renderShops()},true);
  // Space settings: tap once to reveal clear Change/Delete actions.
  // Neutral, uncluttered icon choices: one box and one shelf.
  const inv=$('inventory');if(inv){const icons=$('v23SpaceIcons');if(icons){icons.innerHTML=['📦','🗄️'].map((x,i)=>`<button type="button" class="${i===0?'selected':''}" data-v23-icon="${x}">${x}</button>`).join('');}}
