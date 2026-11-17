@@ -84,6 +84,64 @@ document.getElementById('calendarToday').onclick=()=>{calendarCursor=new Date(ne
 
 
 function openSection(id){document.getElementById('home').classList.toggle('hidden',id!=='home');if(id==='home'){
+/* v22 usability refinements */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Recipe search: reveal the search field, but leave the keyboard closed until the user taps it.
+ const recipeSearchBtn=$('v19RecipeSearch');
+ if(recipeSearchBtn){recipeSearchBtn.onclick=()=>{const panel=$('recipeSearch')?.closest('.panel');panel?.classList.toggle('hidden');$('recipeTitle')?.closest('.panel')?.classList.add('hidden');};}
+ // Inventory view switch: exactly one of spaces/items is visible. Search remains first.
+ const invToggle=$('inventoryAll');
+ let inventoryView='spaces';
+ function showInventoryView(view){
+   inventoryView=view;
+   const spaces=$('inventorySpaces'),all=$('inventoryAllItems'),room=$('inventoryRoom');
+   room?.classList.add('hidden');
+   if(view==='items'){
+     spaces?.classList.add('hidden');all?.classList.remove('hidden');invToggle.textContent='공간';drawAllInventoryRows();
+   }else{
+     all?.classList.add('hidden');spaces?.classList.remove('hidden');invToggle.textContent='물건';renderSpaces();
+   }
+ }
+ if(invToggle)invToggle.onclick=()=>showInventoryView(inventoryView==='spaces'?'items':'spaces');
+ // Open a selected space's item list directly underneath that space row, rather than navigating away.
+ const spacesEl=$('inventorySpaces');
+ if(spacesEl){
+   spacesEl.addEventListener('click',e=>{
+     const btn=e.target.closest('[data-space-open]');
+     if(!btn)return;
+     e.preventDefault();e.stopPropagation();
+     const id=btn.dataset.spaceOpen;
+     const old=spacesEl.querySelector('.v22-space-inline');
+     if(old && old.dataset.forSpace===id){old.remove();return;}
+     old?.remove();
+     currentSpace=id;resetInventoryForm();renderInventoryItems();
+     const wrap=document.createElement('div');wrap.className='v22-space-inline';wrap.dataset.forSpace=id;
+     wrap.style.cssText='grid-column:1/-1;margin:0 0 10px;padding:10px 12px;background:#f6f8fb;border:1px solid #dfe6ef;border-radius:13px';
+     const heading=document.createElement('div');heading.style.cssText='font-weight:800;font-size:13px;margin-bottom:8px';heading.textContent=(data.spaces.find(x=>x.id===id)?.name||'공간')+' 물품';wrap.appendChild(heading);
+     const items=$('inventoryItems');
+     if(items){items.classList.remove('hidden');items.style.display='block';wrap.appendChild(items);}
+     const add=$('inventoryRoom').querySelector('.add-fab');
+     if(add){wrap.appendChild(add);add.style.margin='8px 0';}
+     btn.insertAdjacentElement('afterend',wrap);
+   },true);
+ }
+ // Ensure inline space lists stay visible and are refreshed after changes.
+ const invCss=document.createElement('style');invCss.textContent=`.v22-space-inline .inventory-item{margin:6px 0;background:#fff}.v22-space-inline #inventoryItems{display:block!important}.v22-space-inline .add-fab{width:100%}`;document.head.appendChild(invCss);
+ // Exercise picker label: brand + one space + exercise name · body part. No extra separator before brand.
+ const filterPanel=$('v20ExerciseFilterPanel');
+ if(filterPanel){
+   window.drawLibrary=function(){
+     const q=($('v19ExerciseSearch')?.value||'').toLowerCase();
+     const allowed=[...filterPanel.querySelectorAll('input:checked')].map(x=>x.value);
+     const entries=new Map();[...data.exerciseLibrary,...allExerciseEntries()].forEach(x=>entries.set(exerciseKey(x),x));
+     const arr=[...entries.entries()].filter(([k,x])=>allowed.includes(x.part)&&(!q||`${x.name} ${x.brand||''} ${x.part}`.toLowerCase().includes(q)));
+     $('v19ExerciseOptions').innerHTML=arr.length?arr.slice(0,5).map(([k,x])=>`<button class="soft" data-v19-pick="${encodeURIComponent(k)}">${esc(x.brand?x.brand+' '+x.name:x.name)} · ${esc(x.part)}</button>`).join('')+(arr.length>5?`<div class="subnote">검색어를 입력하면 더 찾을 수 있어요 · ${arr.length}개</div>`:''):'<div class="subnote">선택한 운동 부위에 등록된 종목이 없어요. 부위 선택이나 검색어를 확인해 주세요.</div>';
+   };
+   window.drawLibrary();
+ }
+})();
+
 renderCalendar();renderWeekSummary();}document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id));if(id==='todo')renderTodos();if(id==='shopping')renderShops();if(id==='cooking'){renderRecipes();document.getElementById('recipeDetail').classList.add('hidden')}if(id==='diary'){renderDiaries();if(!document.getElementById('diaryDate').value)document.getElementById('diaryDate').value=today()}if(id==='inventory'){renderSpaces();resetInventoryForm()}if(id==='workout'){document.getElementById('workDateLabel').textContent=today();renderWorkoutHistory()}window.scrollTo(0,0)}
 window.openSection=openSection;
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.open&&!b.hasAttribute('onclick'))openSection(b.dataset.open);if(b.hasAttribute('data-home')&&!b.hasAttribute('onclick'))openSection('home')});
@@ -183,6 +241,64 @@ document.getElementById('recipeList').addEventListener('click',e=>{const b=e.tar
 // Diary: mood and live character count
 function renderDiaries(){const q=document.getElementById('diarySearch').value.trim().toLowerCase(),date=document.getElementById('diaryFilterDate').value,arr=[...data.diaries].filter(d=>(!date||d.date===date)&&(!q||(`${d.title||''} ${d.body}`).toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||b.updatedAt-a.updatedAt);const list=document.getElementById('diaryList');document.getElementById('diaryEmpty').classList.toggle('hidden',arr.length>0);list.innerHTML=arr.map(d=>`<article class="diary-card"><div class="diary-meta"><span class="diary-date">${esc(d.date)}</span> · ${new Date(d.updatedAt).toLocaleString('ko-KR')} ${d.mood?`<span class="mood-tag">${esc(d.mood)}</span>`:''}</div><h3>${esc(d.title||'제목 없는 일기')}</h3><p>${esc(d.body.length>260?d.body.slice(0,260)+'…':d.body)}</p><div class="diary-actions"><button class="soft" data-diary-edit="${d.id}">수정</button><button class="danger" data-diary-delete="${d.id}">삭제</button></div></article>`).join('')}
 document.getElementById('saveDiary').onclick=()=>{const date=document.getElementById('diaryDate').value||today(),title=document.getElementById('diaryTitle').value.trim(),body=document.getElementById('diaryBody').value.trim(),mood=document.getElementById('diaryMood').value;if(!body)return alert('일기 내용을 입력해 주세요.');if(editingDiary){const d=data.diaries.find(x=>x.id===editingDiary);if(d)Object.assign(d,{date,title,body,mood,updatedAt:Date.now()})}else data.diaries.push({id:uid(),date,title,body,mood,createdAt:Date.now(),updatedAt:Date.now()});save();resetDiaryForm();document.getElementById('diaryMood').value='';document.getElementById('diaryCharCount').textContent='';renderDiaries();
+/* v22 usability refinements */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Recipe search: reveal the search field, but leave the keyboard closed until the user taps it.
+ const recipeSearchBtn=$('v19RecipeSearch');
+ if(recipeSearchBtn){recipeSearchBtn.onclick=()=>{const panel=$('recipeSearch')?.closest('.panel');panel?.classList.toggle('hidden');$('recipeTitle')?.closest('.panel')?.classList.add('hidden');};}
+ // Inventory view switch: exactly one of spaces/items is visible. Search remains first.
+ const invToggle=$('inventoryAll');
+ let inventoryView='spaces';
+ function showInventoryView(view){
+   inventoryView=view;
+   const spaces=$('inventorySpaces'),all=$('inventoryAllItems'),room=$('inventoryRoom');
+   room?.classList.add('hidden');
+   if(view==='items'){
+     spaces?.classList.add('hidden');all?.classList.remove('hidden');invToggle.textContent='공간';drawAllInventoryRows();
+   }else{
+     all?.classList.add('hidden');spaces?.classList.remove('hidden');invToggle.textContent='물건';renderSpaces();
+   }
+ }
+ if(invToggle)invToggle.onclick=()=>showInventoryView(inventoryView==='spaces'?'items':'spaces');
+ // Open a selected space's item list directly underneath that space row, rather than navigating away.
+ const spacesEl=$('inventorySpaces');
+ if(spacesEl){
+   spacesEl.addEventListener('click',e=>{
+     const btn=e.target.closest('[data-space-open]');
+     if(!btn)return;
+     e.preventDefault();e.stopPropagation();
+     const id=btn.dataset.spaceOpen;
+     const old=spacesEl.querySelector('.v22-space-inline');
+     if(old && old.dataset.forSpace===id){old.remove();return;}
+     old?.remove();
+     currentSpace=id;resetInventoryForm();renderInventoryItems();
+     const wrap=document.createElement('div');wrap.className='v22-space-inline';wrap.dataset.forSpace=id;
+     wrap.style.cssText='grid-column:1/-1;margin:0 0 10px;padding:10px 12px;background:#f6f8fb;border:1px solid #dfe6ef;border-radius:13px';
+     const heading=document.createElement('div');heading.style.cssText='font-weight:800;font-size:13px;margin-bottom:8px';heading.textContent=(data.spaces.find(x=>x.id===id)?.name||'공간')+' 물품';wrap.appendChild(heading);
+     const items=$('inventoryItems');
+     if(items){items.classList.remove('hidden');items.style.display='block';wrap.appendChild(items);}
+     const add=$('inventoryRoom').querySelector('.add-fab');
+     if(add){wrap.appendChild(add);add.style.margin='8px 0';}
+     btn.insertAdjacentElement('afterend',wrap);
+   },true);
+ }
+ // Ensure inline space lists stay visible and are refreshed after changes.
+ const invCss=document.createElement('style');invCss.textContent=`.v22-space-inline .inventory-item{margin:6px 0;background:#fff}.v22-space-inline #inventoryItems{display:block!important}.v22-space-inline .add-fab{width:100%}`;document.head.appendChild(invCss);
+ // Exercise picker label: brand + one space + exercise name · body part. No extra separator before brand.
+ const filterPanel=$('v20ExerciseFilterPanel');
+ if(filterPanel){
+   window.drawLibrary=function(){
+     const q=($('v19ExerciseSearch')?.value||'').toLowerCase();
+     const allowed=[...filterPanel.querySelectorAll('input:checked')].map(x=>x.value);
+     const entries=new Map();[...data.exerciseLibrary,...allExerciseEntries()].forEach(x=>entries.set(exerciseKey(x),x));
+     const arr=[...entries.entries()].filter(([k,x])=>allowed.includes(x.part)&&(!q||`${x.name} ${x.brand||''} ${x.part}`.toLowerCase().includes(q)));
+     $('v19ExerciseOptions').innerHTML=arr.length?arr.slice(0,5).map(([k,x])=>`<button class="soft" data-v19-pick="${encodeURIComponent(k)}">${esc(x.brand?x.brand+' '+x.name:x.name)} · ${esc(x.part)}</button>`).join('')+(arr.length>5?`<div class="subnote">검색어를 입력하면 더 찾을 수 있어요 · ${arr.length}개</div>`:''):'<div class="subnote">선택한 운동 부위에 등록된 종목이 없어요. 부위 선택이나 검색어를 확인해 주세요.</div>';
+   };
+   window.drawLibrary();
+ }
+})();
+
 renderCalendar();renderWeekSummary();alert('일기를 저장했어요.')};
 document.getElementById('diaryBody').addEventListener('input',e=>document.getElementById('diaryCharCount').textContent=`${e.target.value.length.toLocaleString('ko-KR')}자`);document.getElementById('cancelDiaryEdit').addEventListener('click',()=>{document.getElementById('diaryMood').value='';document.getElementById('diaryCharCount').textContent=''});
 const oldDiaryListClick=document.getElementById('diaryList');oldDiaryListClick.addEventListener('click',e=>{const b=e.target.closest('[data-diary-edit]');if(!b)return;const d=data.diaries.find(x=>x.id===b.dataset.diaryEdit);if(d){document.getElementById('diaryMood').value=d.mood||'';document.getElementById('diaryCharCount').textContent=`${d.body.length.toLocaleString('ko-KR')}자`}});
@@ -230,8 +346,124 @@ document.getElementById('workoutPartFilter').addEventListener('change',renderWor
  todo_csv:()=>csv('할일_미완료.csv',['할 일','기한','우선순위'],data.todos.filter(x=>!x.done).map(x=>[x.text,x.date,x.priority||'보통'])),
  todo_copy:()=>copy(data.todos.filter(x=>!x.done).map(x=>`□ ${x.text}${x.date?' ('+x.date+')':''}`).join('\n')||'미완료 할 일이 없어요.'),
  todo_today:()=>{const a=data.todos.filter(x=>!x.done&&x.date&&x.date<today());if(!a.length)return alert('오늘로 옮길 기한 지난 할 일이 없어요.');if(!confirm(`${a.length}개 항목의 기한을 오늘로 바꿀까요?`))return;a.forEach(x=>x.date=today());save();renderTodos();
+/* v22 usability refinements */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Recipe search: reveal the search field, but leave the keyboard closed until the user taps it.
+ const recipeSearchBtn=$('v19RecipeSearch');
+ if(recipeSearchBtn){recipeSearchBtn.onclick=()=>{const panel=$('recipeSearch')?.closest('.panel');panel?.classList.toggle('hidden');$('recipeTitle')?.closest('.panel')?.classList.add('hidden');};}
+ // Inventory view switch: exactly one of spaces/items is visible. Search remains first.
+ const invToggle=$('inventoryAll');
+ let inventoryView='spaces';
+ function showInventoryView(view){
+   inventoryView=view;
+   const spaces=$('inventorySpaces'),all=$('inventoryAllItems'),room=$('inventoryRoom');
+   room?.classList.add('hidden');
+   if(view==='items'){
+     spaces?.classList.add('hidden');all?.classList.remove('hidden');invToggle.textContent='공간';drawAllInventoryRows();
+   }else{
+     all?.classList.add('hidden');spaces?.classList.remove('hidden');invToggle.textContent='물건';renderSpaces();
+   }
+ }
+ if(invToggle)invToggle.onclick=()=>showInventoryView(inventoryView==='spaces'?'items':'spaces');
+ // Open a selected space's item list directly underneath that space row, rather than navigating away.
+ const spacesEl=$('inventorySpaces');
+ if(spacesEl){
+   spacesEl.addEventListener('click',e=>{
+     const btn=e.target.closest('[data-space-open]');
+     if(!btn)return;
+     e.preventDefault();e.stopPropagation();
+     const id=btn.dataset.spaceOpen;
+     const old=spacesEl.querySelector('.v22-space-inline');
+     if(old && old.dataset.forSpace===id){old.remove();return;}
+     old?.remove();
+     currentSpace=id;resetInventoryForm();renderInventoryItems();
+     const wrap=document.createElement('div');wrap.className='v22-space-inline';wrap.dataset.forSpace=id;
+     wrap.style.cssText='grid-column:1/-1;margin:0 0 10px;padding:10px 12px;background:#f6f8fb;border:1px solid #dfe6ef;border-radius:13px';
+     const heading=document.createElement('div');heading.style.cssText='font-weight:800;font-size:13px;margin-bottom:8px';heading.textContent=(data.spaces.find(x=>x.id===id)?.name||'공간')+' 물품';wrap.appendChild(heading);
+     const items=$('inventoryItems');
+     if(items){items.classList.remove('hidden');items.style.display='block';wrap.appendChild(items);}
+     const add=$('inventoryRoom').querySelector('.add-fab');
+     if(add){wrap.appendChild(add);add.style.margin='8px 0';}
+     btn.insertAdjacentElement('afterend',wrap);
+   },true);
+ }
+ // Ensure inline space lists stay visible and are refreshed after changes.
+ const invCss=document.createElement('style');invCss.textContent=`.v22-space-inline .inventory-item{margin:6px 0;background:#fff}.v22-space-inline #inventoryItems{display:block!important}.v22-space-inline .add-fab{width:100%}`;document.head.appendChild(invCss);
+ // Exercise picker label: brand + one space + exercise name · body part. No extra separator before brand.
+ const filterPanel=$('v20ExerciseFilterPanel');
+ if(filterPanel){
+   window.drawLibrary=function(){
+     const q=($('v19ExerciseSearch')?.value||'').toLowerCase();
+     const allowed=[...filterPanel.querySelectorAll('input:checked')].map(x=>x.value);
+     const entries=new Map();[...data.exerciseLibrary,...allExerciseEntries()].forEach(x=>entries.set(exerciseKey(x),x));
+     const arr=[...entries.entries()].filter(([k,x])=>allowed.includes(x.part)&&(!q||`${x.name} ${x.brand||''} ${x.part}`.toLowerCase().includes(q)));
+     $('v19ExerciseOptions').innerHTML=arr.length?arr.slice(0,5).map(([k,x])=>`<button class="soft" data-v19-pick="${encodeURIComponent(k)}">${esc(x.brand?x.brand+' '+x.name:x.name)} · ${esc(x.part)}</button>`).join('')+(arr.length>5?`<div class="subnote">검색어를 입력하면 더 찾을 수 있어요 · ${arr.length}개</div>`:''):'<div class="subnote">선택한 운동 부위에 등록된 종목이 없어요. 부위 선택이나 검색어를 확인해 주세요.</div>';
+   };
+   window.drawLibrary();
+ }
+})();
+
 renderCalendar();renderWeekSummary();alert('기한을 오늘로 변경했어요.')},
  todo_all_done:()=>{const a=data.todos.filter(x=>!x.done);if(!a.length)return alert('미완료 할 일이 없어요.');if(!confirm(`미완료 ${a.length}개를 모두 완료 처리할까요?`))return;a.forEach(x=>x.done=true);save();renderTodos();
+/* v22 usability refinements */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Recipe search: reveal the search field, but leave the keyboard closed until the user taps it.
+ const recipeSearchBtn=$('v19RecipeSearch');
+ if(recipeSearchBtn){recipeSearchBtn.onclick=()=>{const panel=$('recipeSearch')?.closest('.panel');panel?.classList.toggle('hidden');$('recipeTitle')?.closest('.panel')?.classList.add('hidden');};}
+ // Inventory view switch: exactly one of spaces/items is visible. Search remains first.
+ const invToggle=$('inventoryAll');
+ let inventoryView='spaces';
+ function showInventoryView(view){
+   inventoryView=view;
+   const spaces=$('inventorySpaces'),all=$('inventoryAllItems'),room=$('inventoryRoom');
+   room?.classList.add('hidden');
+   if(view==='items'){
+     spaces?.classList.add('hidden');all?.classList.remove('hidden');invToggle.textContent='공간';drawAllInventoryRows();
+   }else{
+     all?.classList.add('hidden');spaces?.classList.remove('hidden');invToggle.textContent='물건';renderSpaces();
+   }
+ }
+ if(invToggle)invToggle.onclick=()=>showInventoryView(inventoryView==='spaces'?'items':'spaces');
+ // Open a selected space's item list directly underneath that space row, rather than navigating away.
+ const spacesEl=$('inventorySpaces');
+ if(spacesEl){
+   spacesEl.addEventListener('click',e=>{
+     const btn=e.target.closest('[data-space-open]');
+     if(!btn)return;
+     e.preventDefault();e.stopPropagation();
+     const id=btn.dataset.spaceOpen;
+     const old=spacesEl.querySelector('.v22-space-inline');
+     if(old && old.dataset.forSpace===id){old.remove();return;}
+     old?.remove();
+     currentSpace=id;resetInventoryForm();renderInventoryItems();
+     const wrap=document.createElement('div');wrap.className='v22-space-inline';wrap.dataset.forSpace=id;
+     wrap.style.cssText='grid-column:1/-1;margin:0 0 10px;padding:10px 12px;background:#f6f8fb;border:1px solid #dfe6ef;border-radius:13px';
+     const heading=document.createElement('div');heading.style.cssText='font-weight:800;font-size:13px;margin-bottom:8px';heading.textContent=(data.spaces.find(x=>x.id===id)?.name||'공간')+' 물품';wrap.appendChild(heading);
+     const items=$('inventoryItems');
+     if(items){items.classList.remove('hidden');items.style.display='block';wrap.appendChild(items);}
+     const add=$('inventoryRoom').querySelector('.add-fab');
+     if(add){wrap.appendChild(add);add.style.margin='8px 0';}
+     btn.insertAdjacentElement('afterend',wrap);
+   },true);
+ }
+ // Ensure inline space lists stay visible and are refreshed after changes.
+ const invCss=document.createElement('style');invCss.textContent=`.v22-space-inline .inventory-item{margin:6px 0;background:#fff}.v22-space-inline #inventoryItems{display:block!important}.v22-space-inline .add-fab{width:100%}`;document.head.appendChild(invCss);
+ // Exercise picker label: brand + one space + exercise name · body part. No extra separator before brand.
+ const filterPanel=$('v20ExerciseFilterPanel');
+ if(filterPanel){
+   window.drawLibrary=function(){
+     const q=($('v19ExerciseSearch')?.value||'').toLowerCase();
+     const allowed=[...filterPanel.querySelectorAll('input:checked')].map(x=>x.value);
+     const entries=new Map();[...data.exerciseLibrary,...allExerciseEntries()].forEach(x=>entries.set(exerciseKey(x),x));
+     const arr=[...entries.entries()].filter(([k,x])=>allowed.includes(x.part)&&(!q||`${x.name} ${x.brand||''} ${x.part}`.toLowerCase().includes(q)));
+     $('v19ExerciseOptions').innerHTML=arr.length?arr.slice(0,5).map(([k,x])=>`<button class="soft" data-v19-pick="${encodeURIComponent(k)}">${esc(x.brand?x.brand+' '+x.name:x.name)} · ${esc(x.part)}</button>`).join('')+(arr.length>5?`<div class="subnote">검색어를 입력하면 더 찾을 수 있어요 · ${arr.length}개</div>`:''):'<div class="subnote">선택한 운동 부위에 등록된 종목이 없어요. 부위 선택이나 검색어를 확인해 주세요.</div>';
+   };
+   window.drawLibrary();
+ }
+})();
+
 renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  shop_csv:()=>csv('쇼핑목록.csv',['물건','분류','예상가격','구매완료'],data.shops.map(x=>[x.text,x.category||'기타',x.price||0,x.done?'예':'아니오'])),
  shop_copy:()=>copy(data.shops.filter(x=>!x.done).map(x=>`□ ${x.text}${x.price?' · '+fmt(x.price)+'원':''}`).join('\n')||'미구매 항목이 없어요.'),
@@ -400,6 +632,64 @@ renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  if(filterPanel&&window.drawLibrary){const oldDraw=window.drawLibrary;window.drawLibrary=function(){const q=($('v19ExerciseSearch')?.value||'').toLowerCase(),allowed=[...filterPanel.querySelectorAll('input:checked')].map(x=>x.value),entries=new Map();[...data.exerciseLibrary,...allExerciseEntries()].forEach(x=>entries.set(exerciseKey(x),x));const arr=[...entries.entries()].filter(([k,x])=>allowed.includes(x.part)&&(!q||`${x.name} ${x.brand||''} ${x.part}`.toLowerCase().includes(q)));$('v19ExerciseOptions').innerHTML=arr.length?arr.slice(0,5).map(([k,x])=>`<button class="soft" data-v19-pick="${encodeURIComponent(k)}">${esc(x.name)} · ${esc(x.part)} · ${esc(x.brand||'브랜드 미입력')}</button>`).join('')+(arr.length>5?`<div class="subnote">검색어를 입력하면 더 찾을 수 있어요 · ${arr.length}개</div>`:''):'<div class="subnote">선택한 운동 부위에 등록된 종목이 없어요. 부위 선택이나 검색어를 확인해 주세요.</div>'};window.drawLibrary()}
  // Make the 5-minute rest button match every other timer button.
  const timerStyle=document.createElement('style');timerStyle.textContent='#workTrain .timer-buttons button[data-rest="300"]{background:#ffffff18!important;color:white!important;border-color:#ffffff40!important}';document.head.appendChild(timerStyle);
+})();
+
+/* v22 usability refinements */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Recipe search: reveal the search field, but leave the keyboard closed until the user taps it.
+ const recipeSearchBtn=$('v19RecipeSearch');
+ if(recipeSearchBtn){recipeSearchBtn.onclick=()=>{const panel=$('recipeSearch')?.closest('.panel');panel?.classList.toggle('hidden');$('recipeTitle')?.closest('.panel')?.classList.add('hidden');};}
+ // Inventory view switch: exactly one of spaces/items is visible. Search remains first.
+ const invToggle=$('inventoryAll');
+ let inventoryView='spaces';
+ function showInventoryView(view){
+   inventoryView=view;
+   const spaces=$('inventorySpaces'),all=$('inventoryAllItems'),room=$('inventoryRoom');
+   room?.classList.add('hidden');
+   if(view==='items'){
+     spaces?.classList.add('hidden');all?.classList.remove('hidden');invToggle.textContent='공간';drawAllInventoryRows();
+   }else{
+     all?.classList.add('hidden');spaces?.classList.remove('hidden');invToggle.textContent='물건';renderSpaces();
+   }
+ }
+ if(invToggle)invToggle.onclick=()=>showInventoryView(inventoryView==='spaces'?'items':'spaces');
+ // Open a selected space's item list directly underneath that space row, rather than navigating away.
+ const spacesEl=$('inventorySpaces');
+ if(spacesEl){
+   spacesEl.addEventListener('click',e=>{
+     const btn=e.target.closest('[data-space-open]');
+     if(!btn)return;
+     e.preventDefault();e.stopPropagation();
+     const id=btn.dataset.spaceOpen;
+     const old=spacesEl.querySelector('.v22-space-inline');
+     if(old && old.dataset.forSpace===id){old.remove();return;}
+     old?.remove();
+     currentSpace=id;resetInventoryForm();renderInventoryItems();
+     const wrap=document.createElement('div');wrap.className='v22-space-inline';wrap.dataset.forSpace=id;
+     wrap.style.cssText='grid-column:1/-1;margin:0 0 10px;padding:10px 12px;background:#f6f8fb;border:1px solid #dfe6ef;border-radius:13px';
+     const heading=document.createElement('div');heading.style.cssText='font-weight:800;font-size:13px;margin-bottom:8px';heading.textContent=(data.spaces.find(x=>x.id===id)?.name||'공간')+' 물품';wrap.appendChild(heading);
+     const items=$('inventoryItems');
+     if(items){items.classList.remove('hidden');items.style.display='block';wrap.appendChild(items);}
+     const add=$('inventoryRoom').querySelector('.add-fab');
+     if(add){wrap.appendChild(add);add.style.margin='8px 0';}
+     btn.insertAdjacentElement('afterend',wrap);
+   },true);
+ }
+ // Ensure inline space lists stay visible and are refreshed after changes.
+ const invCss=document.createElement('style');invCss.textContent=`.v22-space-inline .inventory-item{margin:6px 0;background:#fff}.v22-space-inline #inventoryItems{display:block!important}.v22-space-inline .add-fab{width:100%}`;document.head.appendChild(invCss);
+ // Exercise picker label: brand + one space + exercise name · body part. No extra separator before brand.
+ const filterPanel=$('v20ExerciseFilterPanel');
+ if(filterPanel){
+   window.drawLibrary=function(){
+     const q=($('v19ExerciseSearch')?.value||'').toLowerCase();
+     const allowed=[...filterPanel.querySelectorAll('input:checked')].map(x=>x.value);
+     const entries=new Map();[...data.exerciseLibrary,...allExerciseEntries()].forEach(x=>entries.set(exerciseKey(x),x));
+     const arr=[...entries.entries()].filter(([k,x])=>allowed.includes(x.part)&&(!q||`${x.name} ${x.brand||''} ${x.part}`.toLowerCase().includes(q)));
+     $('v19ExerciseOptions').innerHTML=arr.length?arr.slice(0,5).map(([k,x])=>`<button class="soft" data-v19-pick="${encodeURIComponent(k)}">${esc(x.brand?x.brand+' '+x.name:x.name)} · ${esc(x.part)}</button>`).join('')+(arr.length>5?`<div class="subnote">검색어를 입력하면 더 찾을 수 있어요 · ${arr.length}개</div>`:''):'<div class="subnote">선택한 운동 부위에 등록된 종목이 없어요. 부위 선택이나 검색어를 확인해 주세요.</div>';
+   };
+   window.drawLibrary();
+ }
 })();
 
 renderCalendar();renderWeekSummary();
