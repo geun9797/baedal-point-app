@@ -23,20 +23,21 @@ button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:not-allowed
 .progress{height:9px;background:#25344a;border-radius:99px;overflow:hidden}.bar{height:100%;background:var(--blue);border-radius:99px;transition:width .2s}.bar.done{background:var(--green)}
 .notice{padding:12px;border-radius:12px;background:#18283d;color:var(--muted);font-size:12px;line-height:1.5}.record-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:13px;margin-top:10px}.record-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums}.record-table th,.record-table td{padding:11px 2px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line);overflow:hidden;text-overflow:clip}.record-table th:nth-child(1){width:27%}.record-table th:nth-child(2){width:14%}.record-table th:nth-child(3){width:29%}.record-table th:nth-child(4){width:20%}.record-table th:nth-child(5){width:10%}.record-table th{color:var(--muted);font-weight:650;background:#0e1928}.record-table td:first-child,.record-table th:first-child{text-align:left;padding-left:5px}.record-table .record-settings{padding:5px 2px;font-size:14px}.record-table tr:last-child td{border-bottom:0}.record-table .date-cell{font-weight:750}.record-table .points-cell{font-weight:750}.record-table .record-settings{padding:5px 8px;font-size:15px}
 .hidden{display:none!important}.modal-back{position:fixed;inset:0;background:#0009;display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:10}.modal{width:min(100%,600px);background:#172438;border:1px solid var(--line);border-radius:20px;padding:18px 16px 24px;max-height:85vh;overflow:auto}.modal h2{margin:0 0 12px;font-size:17px}.modal-actions{display:flex;gap:8px;margin-top:15px}.modal-actions button{flex:1}
-.footer{font-size:10px;text-align:center;color:#71839b;margin-top:22px}.empty{text-align:center;padding:30px 10px;color:var(--muted);font-size:13px}
+.timer-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#183657,#14263c);border:1px solid #31577d;border-radius:16px;padding:12px 14px;margin:0 0 13px}.timer-time{font-size:25px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:1px}.timer-label{font-size:11px;color:#b8cbe0}.timer-btn{min-width:88px;background:#2b70bd;border-color:#3b85d8}.timer-btn.running{background:#4a2028;border-color:#793440}.mission-actions{display:flex;gap:7px}.mission-actions button{white-space:nowrap}.footer{font-size:10px;text-align:center;color:#71839b;margin-top:22px}.empty{text-align:center;padding:30px 10px;color:var(--muted);font-size:13px}
 @media(min-width:500px){.app{padding-top:26px}.point-list{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 <div class="app">
  <header class="top"><div><div class="brand">배달 포인트 매니저</div><div class="sub">운행 미션 · 포인트 계산 · 성공 기록</div></div><button class="tiny ghost" id="settingsBtn" aria-label="설정" title="설정" style="font-size:21px;padding:7px 10px">⚙</button></header>
+ <section class="timer-card" aria-label="4분 타이머"><div><div class="timer-label">운행 집중 타이머</div><div class="timer-time" id="fourTimerDisplay">04:00</div></div><button class="timer-btn" id="fourTimerToggle">시작</button></section>
  <nav class="tabs"><button class="tab active" data-tab="drive">운행</button><button class="tab" data-tab="records">기록</button></nav>
  <main id="driveView">
   <div class="days" id="days"></div>
   <section id="noMission" class="card"><h2>미션 시작</h2><p class="muted small">새 미션의 목표 포인트와 보상 금액을 설정해 주세요.</p><button class="primary" id="addMission" style="width:100%">＋ 새 미션 시작</button></section>
   <section id="missionView" class="hidden">
    <section class="card">
-    <div class="row between"><h2>미션 설정</h2><button class="tiny ghost" id="finishMission">미션 종료</button></div>
+    <div class="row between"><h2>미션 설정</h2><div class="mission-actions"><button class="tiny danger" id="cancelMission">미션 취소</button><button class="tiny ghost" id="finishMission">미션 종료</button></div></div>
     <div class="row">
      <div class="field grow"><label for="goal">목표 포인트</label><input id="goal" type="number" min="1" step="1" inputmode="decimal" placeholder="예: 115"></div>
      <div class="field grow"><label for="amount">달성 금액 (원)</label><input id="amount" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 85000"></div>
@@ -104,7 +105,7 @@ function render(){
   document.getElementById('missionBadge').textContent=ok?'달성 성공':'진행 중';document.getElementById('missionBadge').style.color=ok?'var(--green)':'var(--amber)';
   const pct=Math.min(100,total()/Math.max(1,goalNum())*100);document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressBar').classList.toggle('done',ok);
   document.getElementById('remaining').textContent=ok?'미션 성공! 종료 후 날짜와 금액을 확인해 기록을 저장하세요.':`목표 ${m.goal||'—'}P까지 올림 기준 ${Math.max(0,goalNum()-Math.ceil(total()-1e-9))}P 남음`;
-  document.getElementById('finishMission').disabled=!ok;
+  document.getElementById('finishMission').disabled=false;
  }
  if(savedPanel){document.getElementById('recordDate').value=m.pendingDate||today();document.getElementById('dateWeekday').textContent=formatDate(document.getElementById('recordDate').value);document.getElementById('saveSummary').textContent=`${state.selectedDay}요일 미션 · 배달 ${count()}건 · 달성 ${total().toFixed(1)}P / 목표 ${m.goal}P · 보상 ${Number(m.amount).toLocaleString('ko-KR')}원`;}
  renderRecords();
@@ -116,7 +117,8 @@ function renderRecords(){const list=document.getElementById('recordList');docume
 function showModal(html){document.getElementById('modalRoot').innerHTML=`<div class="modal-back" id="modalBack"><div class="modal">${html}</div></div>`;document.getElementById('modalBack').addEventListener('click',e=>{if(e.target.id==='modalBack')closeModal()})}
 function closeModal(){document.getElementById('modalRoot').innerHTML=''}
 function beginMission(){const m=activeDay().mission;m.active=true;m.goal=m.lastGoal||'';m.amount=m.lastAmount||'';m.savedPending=false;activeDay().points.forEach(p=>p.count=0);persist();render()}
-function finishMission(){const m=activeDay().mission;m.lastGoal=m.goal;m.lastAmount=m.amount;m.active=false;m.savedPending=true;m.pendingDate=today();persist();render()}
+function finishMission(){const m=activeDay().mission;const ok=achieved();if(!ok&&!confirm('목표 포인트에 도달하지 않았습니다. 미션을 종료할까요? 현재 기록을 저장할 수 있도록 종료 단계로 이동합니다.'))return;m.lastGoal=m.goal;m.lastAmount=m.amount;m.active=false;m.savedPending=true;m.pendingDate=today();persist();render()}
+function cancelMission(){if(!confirm('미션을 취소할까요? 이번 미션의 배달 건수와 포인트는 기록으로 저장되지 않습니다.'))return;const m=activeDay().mission;m.active=false;m.savedPending=false;m.goal='';m.amount='';activeDay().points.forEach(p=>p.count=0);persist();render()}
 function saveRecord(){const m=activeDay().mission,date=document.getElementById('recordDate').value;if(!date){alert('달성 날짜를 선택해 주세요.');return}state.records.push({id:state.nextId++,day:state.selectedDay,date,amount:m.amount,points:total(),count:count(),goal:m.goal,created:Date.now()});m.savedPending=false;m.active=false;m.goal='';m.amount='';activeDay().points.forEach(p=>p.count=0);persist();render();currentTab='records';render();alert('미션 기록을 저장했습니다. 운행 탭에서 같은 날짜의 새 미션을 추가할 수 있어요.')}
 function resetForNext(){const m=activeDay().mission;m.active=false;activeDay().points.forEach(p=>p.count=0);persist();render()}
 function openPointSettings(id){const p=activeDay().points.find(x=>x.id===id);if(!p)return;showModal(`<h2>포인트 항목 설정</h2><p class="muted small">${p.value.toFixed(1)}P 항목을 삭제할까요? 삭제하면 이 요일의 목록에서 계속 제거됩니다.</p><div class="modal-actions"><button class="ghost" id="cancelModal">취소</button><button class="danger" id="deletePoint">삭제하기</button></div>`);document.getElementById('cancelModal').onclick=closeModal;document.getElementById('deletePoint').onclick=()=>{activeDay().points=activeDay().points.filter(x=>x.id!==id);persist();closeModal();render()}}
@@ -128,6 +130,8 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
  if(t.dataset.day){state.selectedDay=t.dataset.day;persist();render()}
  if(t.id==='addMission')beginMission();
  if(t.id==='finishMission')finishMission();
+ if(t.id==='cancelMission')cancelMission();
+ if(t.id==='fourTimerToggle')toggleFourTimer();
  if(t.id==='saveRecord')saveRecord();
  if(t.id==='startNext')resetForNext();
  if(t.id==='settingsBtn')showModal(`<h2>설정</h2><p class="muted small">기록 데이터는 이 기기의 브라우저에 보관됩니다. 기기 변경이나 브라우저 데이터 삭제에 대비해 가끔 백업해 주세요.</p><div class="modal-actions"><button class="primary" id="exportData">백업 내보내기</button><button class="ghost" id="importData">백업 복원</button><button class="ghost" id="cancelModal">닫기</button></div><input type="file" id="backupFile" accept="application/json" class="hidden">`),document.getElementById('exportData')?.addEventListener('click',backup),document.getElementById('importData')?.addEventListener('click',()=>document.getElementById('backupFile').click()),document.getElementById('backupFile')?.addEventListener('change',e=>{if(e.target.files[0]){importBackup(e.target.files[0]);closeModal()}}),document.getElementById('cancelModal')?.addEventListener('click',closeModal);
@@ -138,7 +142,14 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
 
 });
 ['goal','amount'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{const m=activeDay().mission;m[id]=e.target.value;m.lastGoal=m.goal;m.lastAmount=m.amount;persist();renderProgressOnly()}));
-function renderProgressOnly(){if(!activeDay().mission.active)return;const ok=achieved();document.getElementById('missionBadge').textContent=ok?'달성 성공':'진행 중';document.getElementById('missionBadge').style.color=ok?'var(--green)':'var(--amber)';document.getElementById('progressText').textContent=total().toFixed(1)+'P';document.getElementById('ceilText').textContent=`올림 결과: ${Math.ceil(total()-1e-9)}P`;document.getElementById('progressBar').style.width=Math.min(100,total()/Math.max(1,goalNum())*100)+'%';document.getElementById('progressBar').classList.toggle('done',ok);document.getElementById('remaining').textContent=ok?'미션 성공! 종료 후 날짜와 금액을 확인해 기록을 저장하세요.':`목표 ${activeDay().mission.goal||'—'}P까지 올림 기준 ${Math.max(0,goalNum()-Math.ceil(total()-1e-9))}P 남음`;document.getElementById('finishMission').disabled=!ok}
+function renderProgressOnly(){if(!activeDay().mission.active)return;const ok=achieved();document.getElementById('missionBadge').textContent=ok?'달성 성공':'진행 중';document.getElementById('missionBadge').style.color=ok?'var(--green)':'var(--amber)';document.getElementById('progressText').textContent=total().toFixed(1)+'P';document.getElementById('ceilText').textContent=`올림 결과: ${Math.ceil(total()-1e-9)}P`;document.getElementById('progressBar').style.width=Math.min(100,total()/Math.max(1,goalNum())*100)+'%';document.getElementById('progressBar').classList.toggle('done',ok);document.getElementById('remaining').textContent=ok?'미션 성공! 종료 후 날짜와 금액을 확인해 기록을 저장하세요.':`목표 ${activeDay().mission.goal||'—'}P까지 올림 기준 ${Math.max(0,goalNum()-Math.ceil(total()-1e-9))}P 남음`;document.getElementById('finishMission').disabled=false}
+// 4-minute quick timer. The browser may throttle timers while the page is backgrounded.
+let fourTimerInterval=null,fourTimerEnd=0,fourTimerRemaining=240,fourAudioContext=null;
+function paintFourTimer(){const n=Math.max(0,fourTimerRemaining),mm=String(Math.floor(n/60)).padStart(2,'0'),ss=String(n%60).padStart(2,'0');document.getElementById('fourTimerDisplay').textContent=`${mm}:${ss}`;document.getElementById('fourTimerToggle').textContent=fourTimerInterval?'정지':'시작';document.getElementById('fourTimerToggle').classList.toggle('running',!!fourTimerInterval)}
+function beepThree(){try{const ctx=fourAudioContext;if(!ctx)return;ctx.resume();[0,0.42,0.84].forEach((delay)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=880;gain.gain.setValueAtTime(0.0001,ctx.currentTime+delay);gain.gain.exponentialRampToValueAtTime(0.22,ctx.currentTime+delay+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+delay+0.22);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+0.24)})}catch(e){}}
+function stopFourTimer(reset=false){if(fourTimerInterval){clearInterval(fourTimerInterval);fourTimerInterval=null}if(reset)fourTimerRemaining=240;paintFourTimer()}
+function toggleFourTimer(){if(fourTimerInterval){stopFourTimer(false);return}if(!fourAudioContext){const C=window.AudioContext||window.webkitAudioContext;if(C)fourAudioContext=new C()}if(fourAudioContext)fourAudioContext.resume();if(fourTimerRemaining<=0)fourTimerRemaining=240;fourTimerEnd=Date.now()+fourTimerRemaining*1000;paintFourTimer();fourTimerInterval=setInterval(()=>{fourTimerRemaining=Math.max(0,Math.ceil((fourTimerEnd-Date.now())/1000));paintFourTimer();if(fourTimerRemaining<=0){clearInterval(fourTimerInterval);fourTimerInterval=null;fourTimerRemaining=240;paintFourTimer();beepThree();}},250);paintFourTimer()}
+paintFourTimer();
 document.getElementById('recordDate').addEventListener('change',e=>document.getElementById('dateWeekday').textContent=formatDate(e.target.value));
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e});
