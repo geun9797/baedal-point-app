@@ -358,6 +358,50 @@ renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  renderTodos();renderShops();renderRecipes();
 })();
 
+/* v21 refinements: recipe ordering/detail photo, compact photo spaces, workout filter defaults */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Recipe order: fixed category priority, then Korean title order.
+ const categoryOrder=['한식','중식','일식','양식','동남아','디저트·베이킹','기타'];
+ window.renderRecipes=function(){
+   const rank=v=>{let c=(v||'기타').replace(/\s/g,'');if(c==='디저트/베이킹'||c==='디저트베이킹'||c==='베이킹')c='디저트·베이킹';const i=categoryOrder.indexOf(c);return i<0?categoryOrder.length-1:i};
+   const arr=[...data.recipes].sort((a,b)=>rank(a.category)-rank(b.category)||String(a.title||'').localeCompare(String(b.title||''),'ko'));
+   $('recipeCount')&&($('recipeCount').textContent=`${arr.length}개`);
+   $('recipeList').innerHTML=arr.length?arr.map(r=>`<article class="recipe-card"><button type="button" data-recipe-view="${r.id}" style="background:transparent;border:0;padding:0;text-align:left;display:grid;grid-template-columns:42px 1fr;gap:0 9px;align-items:center;flex:1;min-width:0">${r.photo?`<img src="${r.photo}" alt="" style="grid-row:1/3;width:42px;height:42px;object-fit:cover;border-radius:7px">`:'<span style="grid-row:1/3;width:42px;height:42px;display:grid;place-items:center;background:#f0f3f7;border-radius:7px">🍳</span>'}<strong>${esc(r.title)}</strong><small>${esc(r.category||'기타')}</small></button><div class="recipe-actions"><button type="button" class="soft" data-recipe-edit="${r.id}" aria-label="수정">✎</button><button type="button" class="soft" data-recipe-delete="${r.id}" aria-label="삭제">🗑</button></div></article>`).join(''):'<div class="recipe-empty">등록된 레시피가 없어요.</div>';
+ };
+ // Enlarge the image inside the recipe detail popup substantially.
+ const style=document.createElement('style');style.textContent=`#v20RecipeModal .v20-recipe-window{width:min(96vw,620px);max-height:90vh;padding:16px}#v20RecipeModal .v20-recipe-window img{display:block;width:100%;max-width:100%;height:auto;max-height:62vh;object-fit:contain;background:#f4f6f8;border-radius:12px;margin:12px auto}#v20RecipeModal .v20-recipe-window{font-size:15px}`;
+ document.head.appendChild(style);
+
+ // Replace the old "공간 추가 / 관리" drawer with a simple add button in the same location.
+ const oldSpaceDrawer=[...$('inventory').querySelectorAll('details')].find(d=>d.textContent.includes('공간 추가 / 관리')||d.textContent.includes('공간 추가'));
+ if(oldSpaceDrawer){
+   const addBtn=document.createElement('button');addBtn.type='button';addBtn.className='primary';addBtn.id='v21AddSpaceOpen';addBtn.textContent='＋ 공간 추가';addBtn.style.cssText='width:100%;margin:10px 0 12px';
+   oldSpaceDrawer.replaceWith(addBtn);
+   const modal=document.createElement('div');modal.id='v21SpaceModal';modal.className='hidden';modal.innerHTML=`<div class="v21-space-dialog"><div class="v21-space-head"><strong>새 공간 추가</strong><button type="button" id="v21SpaceClose" class="soft">닫기</button></div><label class="subnote">공간 이름</label><input id="v21SpaceName" class="field" placeholder="예: 주방 선반, 냉장고 위칸"><div class="v21-space-icons" id="v21SpaceIcons">${['🟥🗄️','🟧🗄️','🟨🗄️','🟩🗄️','🟦🗄️','🟪🗄️','🟫🗄️','⬜🗄️','⬛🗄️','🩷🗄️','🧊','🧊❄️','🧺','🟥📦','🟧📦','🟨📦','🟩📦','🟦📦','🟪📦','🟫📦'].map((ic,i)=>`<button type="button" class="soft ${i===0?'selected':''}" data-v21-icon="${ic}">${ic}</button>`).join('')}</div><label class="subnote">공간 사진 (선택)</label><input id="v21SpacePhoto" type="file" accept="image/*" class="field"><img id="v21SpacePreview" class="hidden" alt="공간 사진 미리보기"><button type="button" class="primary" id="v21SpaceSave" style="width:100%;margin-top:12px">공간 저장</button></div>`;
+   document.body.appendChild(modal);
+   const css=document.createElement('style');css.textContent=`#v21SpaceModal{position:fixed;inset:0;z-index:1100;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}#v21SpaceModal.hidden{display:none!important}.v21-space-dialog{width:min(96vw,480px);max-height:88vh;overflow:auto;background:white;border-radius:18px;padding:17px;box-shadow:0 12px 40px #0004}.v21-space-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.v21-space-icons{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}.v21-space-icons button{padding:8px 2px;font-size:19px}.v21-space-icons button.selected{background:#e5efff;border-color:#4d85cc}.v21-space-dialog #v21SpacePreview{width:76px;height:76px;object-fit:cover;border-radius:10px;margin-top:8px}.space-grid{display:flex!important;flex-direction:column;gap:6px!important}.space-card{display:flex!important;align-items:center;gap:10px;text-align:left;padding:7px 10px!important;min-height:54px}.space-card .inventory-space-icon{width:42px;height:42px;display:grid;place-items:center;flex:0 0 42px;font-size:25px}.space-card img{width:42px;height:42px;object-fit:cover;border-radius:8px;flex:0 0 42px}.space-card strong{margin:0!important;font-size:14px}.space-card small{margin-left:auto;font-size:11px;white-space:nowrap}`;document.head.appendChild(css);
+   let icon='🟥🗄️',photo='';
+   $('v21AddSpaceOpen').onclick=()=>{modal.classList.remove('hidden');$('v21SpaceName').focus()};
+   $('v21SpaceClose').onclick=()=>modal.classList.add('hidden');
+   modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.add('hidden')});
+   $('v21SpaceIcons').addEventListener('click',e=>{const b=e.target.closest('[data-v21-icon]');if(!b)return;icon=b.dataset.v21Icon;$('v21SpaceIcons').querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b))});
+   $('v21SpacePhoto').addEventListener('change',e=>{const f=e.target.files?.[0];if(!f){photo='';$('v21SpacePreview').classList.add('hidden');return}const reader=new FileReader();reader.onload=()=>{const im=new Image();im.onload=()=>{const scale=Math.min(1,900/Math.max(im.width,im.height)),canvas=document.createElement('canvas');canvas.width=Math.round(im.width*scale);canvas.height=Math.round(im.height*scale);canvas.getContext('2d').drawImage(im,0,0,canvas.width,canvas.height);photo=canvas.toDataURL('image/jpeg',.78);$('v21SpacePreview').src=photo;$('v21SpacePreview').classList.remove('hidden')};im.src=reader.result};reader.readAsDataURL(f)});
+   $('v21SpaceSave').onclick=()=>{const name=$('v21SpaceName').value.trim();if(!name)return alert('공간 이름을 입력해 주세요.');if(data.spaces.some(x=>x.name.toLowerCase()===name.toLowerCase()))return alert('같은 이름의 공간이 있어요.');data.spaces.push({id:uid(),name,icon,photo,createdAt:Date.now()});save();renderSpaces();$('v21SpaceName').value='';$('v21SpacePhoto').value='';$('v21SpacePreview').classList.add('hidden');photo='';icon='🟥🗄️';modal.classList.add('hidden')};
+ }
+ // Compact, one-row space list with optional thumbnail, name and item count.
+ window.renderSpaces=function(){const el=$('inventorySpaces');el.innerHTML=data.spaces.length?data.spaces.map(sp=>`<button class="space-card" data-space-open="${sp.id}">${sp.photo?`<img src="${sp.photo}" alt="">`:`<span class="inventory-space-icon">${esc(sp.icon||'🗂️')}</span>`}<strong>${esc(sp.name)}</strong><small>${data.inventory.filter(x=>x.spaceId===sp.id).length}개 물품</small></button>`).join(''):'<div class="empty" style="grid-column:1/-1">공간을 추가해 물건을 정리해 보세요.</div>';renderInventorySearch()};
+ renderSpaces();
+
+ // When the user has selected today's workout body parts, preselect the same parts in the exercise filter.
+ const start=$('startWorkout'),filterPanel=$('v20ExerciseFilterPanel');
+ if(start&&filterPanel){start.addEventListener('click',()=>{filterPanel.querySelectorAll('input[type="checkbox"]').forEach(cb=>{cb.checked=selectedParts.has(cb.value)});window.drawLibrary?.()});}
+ // Empty filter means show no exercises (not all exercises); selected workout parts are the filter.
+ if(filterPanel&&window.drawLibrary){const oldDraw=window.drawLibrary;window.drawLibrary=function(){const q=($('v19ExerciseSearch')?.value||'').toLowerCase(),allowed=[...filterPanel.querySelectorAll('input:checked')].map(x=>x.value),entries=new Map();[...data.exerciseLibrary,...allExerciseEntries()].forEach(x=>entries.set(exerciseKey(x),x));const arr=[...entries.entries()].filter(([k,x])=>allowed.includes(x.part)&&(!q||`${x.name} ${x.brand||''} ${x.part}`.toLowerCase().includes(q)));$('v19ExerciseOptions').innerHTML=arr.length?arr.slice(0,5).map(([k,x])=>`<button class="soft" data-v19-pick="${encodeURIComponent(k)}">${esc(x.name)} · ${esc(x.part)} · ${esc(x.brand||'브랜드 미입력')}</button>`).join('')+(arr.length>5?`<div class="subnote">검색어를 입력하면 더 찾을 수 있어요 · ${arr.length}개</div>`:''):'<div class="subnote">선택한 운동 부위에 등록된 종목이 없어요. 부위 선택이나 검색어를 확인해 주세요.</div>'};window.drawLibrary()}
+ // Make the 5-minute rest button match every other timer button.
+ const timerStyle=document.createElement('style');timerStyle.textContent='#workTrain .timer-buttons button[data-rest="300"]{background:#ffffff18!important;color:white!important;border-color:#ffffff40!important}';document.head.appendChild(timerStyle);
+})();
+
 renderCalendar();renderWeekSummary();
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script></body></html>
