@@ -7,7 +7,7 @@
 <meta name="description" content="배달 미션 포인트 계산 및 기록 앱">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
-<title>배달 포인트 매니저</title>
+<title>배달매니저</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#121d2e;--panel2:#1a2940;--line:#2b3a50;--text:#f4f7fb;--muted:#9aabc1;--blue:#6aa9ff;--green:#48d597;--red:#ff7777;--amber:#ffc66d}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#101a2b,#0b1220 260px);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
@@ -29,7 +29,7 @@ button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:not-allowed
 </head>
 <body>
 <div class="app">
- <header class="top"><div><div class="brand">배달 포인트 매니저</div><div class="sub">운행 미션 · 포인트 계산 · 성공 기록</div></div><button class="tiny ghost" id="settingsBtn" aria-label="설정" title="설정" style="font-size:21px;padding:7px 10px">⚙</button></header>
+ <header class="top"><div><div class="brand">배달매니저</div><div class="sub">운행 미션 · 포인트 계산 · 성공 기록</div></div><button class="tiny ghost" id="settingsBtn" aria-label="설정" title="설정" style="font-size:21px;padding:7px 10px">⚙</button></header>
  <section class="timer-card" aria-label="4분 타이머"><div><div class="timer-label">운행 집중 타이머</div><div class="timer-time" id="fourTimerDisplay">04:00</div></div><button class="timer-btn" id="fourTimerToggle">시작</button></section>
  <nav class="tabs"><button class="tab active" data-tab="drive">운행</button><button class="tab" data-tab="records">기록</button></nav>
  <main id="driveView">
