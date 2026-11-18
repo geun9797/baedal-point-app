@@ -169,5 +169,10 @@ document.getElementById('recordDate').addEventListener('change',e=>document.getE
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e});
 render();
+
+// v27: tactile confirmation tone for point/count increment taps.
+(function(){let ctx=null;function clickTone(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!ctx)ctx=new C();if(ctx.state==='suspended')ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(1250,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(1850,ctx.currentTime+.045);g.gain.setValueAtTime(.0001,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.12,ctx.currentTime+.008);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.075);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.08)}catch(e){}}
+ document.addEventListener('click',e=>{if(e.target.closest('[data-inc],[data-up],[data-down]'))clickTone()},true);
+})();
 </script>
 </body></html>
