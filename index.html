@@ -950,7 +950,7 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
  $('v19ExerciseOptions')?.addEventListener('click',e=>{const b=e.target.closest('[data-v28-pick]');if(!b||!currentSession)return;e.preventDefault();e.stopPropagation();const x=uniqueTemplates().find(y=>templateKey(y)===decodeURIComponent(b.dataset.v28Pick));if(!x)return;currentSession.exercises.push({part:x.part,name:x.name,brand:x.brand||'',grip:x.grip||'',type:x.type||'',setupMemo:x.setupMemo||'',unilateral:isUn(x),sets:[{weight:'',reps:'',reps2:'',rpe:'',rest:''}],memo:''});renderTodayExercises();document.querySelector('#todayExercises .exercise-card:last-child')?.scrollIntoView({behavior:'smooth',block:'center'})},true);
  // Dedicated template manager on the History page.
  const searchPanel=$('exerciseSearch')?.closest('.panel');
- if(searchPanel&&!$('v28TemplateManager')){const panel=document.createElement('section');panel.className='panel';panel.id='v28TemplateManager';panel.innerHTML=`<div class="v28-title-row"><div class="work-section-title">운동 종목 양식 관리</div><button type="button" class="primary v28-small-btn" id="v28AddTemplate">＋ 종목 등록</button></div><div class="subnote">운동 기록이 아니라, 운동할 때 불러올 종목의 기본 양식만 관리합니다.</div><div id="v28TemplateList"></div><div id="v28TemplateEditor" class="hidden"><div class="v28-edit-head"><b id="v28EditorTitle">종목 등록</b><button type="button" class="soft v28-small-btn" id="v28CancelEdit">닫기</button></div><select id="v28Part" class="field"><option>가슴</option><option>어깨</option><option>이두</option><option>삼두</option><option>등</option><option>하체</option><option>복근</option></select><div class="v28-form-grid"><input id="v28Brand" class="field" placeholder="브랜드"><input id="v28Grip" class="field" placeholder="그립"><input id="v28Name" class="field" placeholder="운동 이름"><input id="v28Type" class="field" placeholder="기구 종류 (선택)"></div><input id="v28Memo" class="field" placeholder="세팅 메모 (선택)"><label class="v28-check"><input id="v28Unilateral" type="checkbox"> 한쪽씩 하는 운동 (개별)</label><div class="toolbar"><button type="button" class="primary" id="v28SaveTemplate">저장</button><button type="button" class="soft" id="v28CancelForm">취소</button></div></div>`;searchPanel.insertAdjacentElement('afterend',panel)}
+ if(searchPanel&&!$('v28TemplateManager')){const panel=document.createElement('section');panel.className='panel';panel.id='v28TemplateManager';panel.innerHTML=`<div class="v28-title-row"><div class="work-section-title">운동 종목 양식 관리</div><button type="button" class="primary v28-small-btn" id="v28AddTemplate">＋ 종목 등록</button></div><div class="subnote">운동 기록이 아니라, 운동할 때 불러올 종목의 기본 양식만 관리합니다.</div><div id="v28TemplateList"></div><div id="v28TemplateEditor" class="hidden"><div class="v28-edit-head"><b id="v28EditorTitle">종목 등록</b><button type="button" class="soft v28-small-btn" id="v28CancelEdit">닫기</button></div><select id="v28Part" class="field"><option>가슴</option><option>어깨</option><option>이두</option><option>삼두</option><option>등</option><option>하체</option><option>복근</option></select><div class="v28-form-grid"><input id="v28Brand" class="field" placeholder="브랜드"><input id="v28Grip" class="field" placeholder="그립"><input id="v28Name" class="field" placeholder="운동 이름"><select id="v28Type" class="field"><option value="머신">머신</option><option value="프리웨이트">프리웨이트</option><option value="케이블">케이블</option><option value="맨몸">맨몸</option><option value="스미스">스미스</option><option value="기타">기타</option></select></div><input id="v28Memo" class="field" placeholder="세팅 메모 (선택)"><label class="v28-check"><input id="v28Unilateral" type="checkbox"> 한쪽씩 하는 운동 (개별)</label><div class="toolbar"><button type="button" class="primary" id="v28SaveTemplate">저장</button><button type="button" class="soft" id="v28CancelForm">취소</button></div></div>`;searchPanel.insertAdjacentElement('afterend',panel)}
  let editingKey=null;
  function renderTemplates(){const el=$('v28TemplateList');if(!el)return;const arr=uniqueTemplates();el.innerHTML=arr.length?arr.map(x=>`<div class="v28-template-row"><div class="v28-template-main"><b>${esc(label(x))}</b>${x.setupMemo?`<small>${esc(x.setupMemo)}</small>`:''}</div><div class="v28-template-actions"><button type="button" class="soft v28-small-btn" data-v28-edit="${encodeURIComponent(templateKey(x))}">수정</button><button type="button" class="danger v28-small-btn" data-v28-del="${encodeURIComponent(templateKey(x))}">삭제</button></div></div>`).join(''):'<div class="subnote">등록된 운동 양식이 없습니다.</div>'}
  function openEditor(x){editingKey=x?templateKey(x):null;$('v28EditorTitle').textContent=x?'운동 종목 수정':'운동 종목 등록';$('v28Part').value=x?.part||'가슴';$('v28Brand').value=x?.brand||'';$('v28Grip').value=x?.grip||'';$('v28Name').value=x?.name||'';$('v28Type').value=x?.type||'';$('v28Memo').value=x?.setupMemo||'';$('v28Unilateral').checked=isUn(x||{});$('v28TemplateEditor').classList.remove('hidden');$('v28Name').focus()}
@@ -972,6 +972,44 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
  const css=document.createElement('style');css.textContent=`#v28TemplateManager{margin-top:10px}.v28-title-row,.v28-edit-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.v28-title-row .work-section-title{margin:0}.v28-small-btn{font-size:11px!important;min-height:29px!important;padding:5px 8px!important;border-radius:8px!important;line-height:1.1}.v28-template-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #e8edf2}.v28-template-main{min-width:0;flex:1;font-size:12px;line-height:1.35}.v28-template-main small,.v28-setup{display:block;font-size:10px;color:#8995a4;margin-top:2px}.v28-template-actions{display:flex;gap:4px;flex-shrink:0}.v28-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}.v28-check{display:flex;gap:7px;align-items:center;font-size:12px;margin:8px 0}.v28-edit-head{margin:12px 0 8px}.v28-template-row b{font-weight:650}.v28-template-row .v28-template-main{overflow-wrap:anywhere}.set-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.set-actions button{flex:1;min-width:0}.set-actions button:disabled{opacity:.35}.exercise-card .exercise-card-head h3{font-size:14px}.v28-setup{font-size:10px}#v19ExerciseOptions button{display:block;width:100%;text-align:left;padding:7px 9px!important;margin:3px 0;font-size:12px;line-height:1.25}#exerciseSearchResults .exercise-result{display:block;width:100%;text-align:left;padding:6px 8px!important;margin:2px 0;font-size:11px;line-height:1.25}.v28-template-row .danger{background:#fff1f1!important;color:#b63a3a!important}`;document.head.appendChild(css);
  // Sort selected templates consistently by requested part order.
  window.drawLibrary?.();
+})();
+
+
+/* v29: suppress browser autofill accessory, unify template registration and remove legacy form */
+(function(){
+ const $=id=>document.getElementById(id);
+ // Chrome/Android autofill suggestions (password, payment and address icons) are not useful in this app.
+ function disableAutofill(root=document){
+   root.querySelectorAll('input,textarea,select,form').forEach(el=>{
+     el.setAttribute('autocomplete','off');
+     if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){
+       el.setAttribute('autocapitalize','off');
+       el.setAttribute('spellcheck','false');
+       el.setAttribute('data-lpignore','true');
+       el.setAttribute('data-1p-ignore','true');
+     }
+     if(el.tagName==='FORM')el.setAttribute('autocomplete','off');
+   });
+ }
+ disableAutofill();
+ document.addEventListener('focusin',e=>{const el=e.target;if(el&&/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)){el.setAttribute('autocomplete','off');el.setAttribute('data-lpignore','true');el.setAttribute('data-1p-ignore','true')}},true);
+ // The new template manager is the only place to register/edit exercise templates.
+ // Remove the old registration drawer from Workout Tools to avoid two competing forms.
+ const oldRegistration=[...document.querySelectorAll('#workout details')].find(d=>d.querySelector('#exerciseName'));
+ if(oldRegistration)oldRegistration.remove();
+ // Keep the requested order: part, brand, grip, exercise name, equipment, setup memo, unilateral.
+ const editor=$('v28TemplateEditor');
+ if(editor){
+   const part=$('v28Part'),grid=editor.querySelector('.v28-form-grid'),brand=$('v28Brand'),grip=$('v28Grip'),name=$('v28Name'),type=$('v28Type'),memo=$('v28Memo'),check=editor.querySelector('.v28-check');
+   if(part&&grid&&brand&&grip&&name&&type&&memo&&check){
+     part.insertAdjacentElement('afterend',brand);brand.insertAdjacentElement('afterend',grip);grip.insertAdjacentElement('afterend',name);name.insertAdjacentElement('afterend',type);type.insertAdjacentElement('afterend',memo);memo.insertAdjacentElement('afterend',check);
+     grid.remove();
+   }
+ }
+ // The manager already sits after Exercise Search and before Monthly Summary; keep that order explicit.
+ const manager=$('v28TemplateManager'),search=$('exerciseSearch')?.closest('.panel'),month=$('workMonthSummary')?.closest('.panel');
+ if(manager&&search&&month){search.insertAdjacentElement('afterend',manager);if(manager.nextElementSibling!==month)manager.parentNode.insertBefore(month,manager.nextElementSibling)}
+ disableAutofill(manager||document);
 })();
 
 </script></body></html>
