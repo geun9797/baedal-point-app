@@ -1076,17 +1076,25 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
 })();
 
 
-/* v37 hotfix: reliable Tasks add action and stable inventory first-entry render */
+/* v38: repair Tasks add, note alignment and inventory first-open rendering */
 (function(){
  const $=id=>document.getElementById(id);
  const add=$('addTodo'), input=$('todoInput'), toggle=$('todoDateToggle'), date=$('todoDate');
  if(add&&input&&toggle&&date){
-  const handler=function(e){e.preventDefault();e.stopImmediatePropagation();const text=input.value.trim();if(!text)return;const due=toggle.checked?date.value:'';data.todos.push({id:uid(),text,date:due,done:false,priority:'normal'});input.value='';toggle.checked=false;date.classList.add('hidden');date.value='';save();window.renderTodos?.();renderCalendar?.();renderWeekSummary?.();input.focus();};
-  add.addEventListener('click',handler,true);
-  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add.click();}},true);
+  // Remove any prior v37 capture-phase handler by replacing the button node (preserve attributes).
+  const clean=add.cloneNode(true); add.replaceWith(clean);
+  clean.onclick=function(e){e.preventDefault();const text=input.value.trim();if(!text)return;const due=toggle.checked?date.value:'';data.todos.push({id:uid(),text,date:due,done:false,priority:'normal'});input.value='';toggle.checked=false;date.classList.add('hidden');date.value='';save();renderTodos();if(typeof renderCalendar==='function')renderCalendar();if(typeof renderWeekSummary==='function')renderWeekSummary();input.focus();};
+  input.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();clean.click();}};
  }
- // Re-render inventory after the section has become visible so mobile grid measurements are valid.
- const nativeOpen=window.openSection; if(typeof nativeOpen==='function'){window.openSection=function(id){nativeOpen(id);if(id==='inventory'){requestAnimationFrame(()=>{renderSpaces();if(typeof renderInventorySearch==='function')renderInventorySearch();});}};}
- const css=document.createElement('style');css.textContent=`#inventoryAllList{width:100%;overflow-x:auto}#inventoryAllList .inventory-row{display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(0,.75fr) minmax(0,.55fr) minmax(0,.85fr) 32px!important;align-items:center!important;min-height:42px!important;white-space:nowrap!important}#inventoryAllList .inventory-row span{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;min-width:0!important}#inventoryAllList .inventory-row.head span{font-size:11px!important}#inventoryAllList .inventory-row:not(.head) span{font-size:12px!important}`;document.head.appendChild(css);
+ // Inventory is initially hidden; repeat render after it becomes visible and after mobile layout settles.
+ const nativeOpen=window.openSection;
+ if(typeof nativeOpen==='function'){
+  window.openSection=function(id){nativeOpen(id);if(id==='inventory'){
+   const rerender=()=>{if(typeof renderSpaces==='function')renderSpaces();if(typeof renderInventorySearch==='function')renderInventorySearch();};
+   requestAnimationFrame(()=>requestAnimationFrame(rerender));setTimeout(rerender,180);setTimeout(rerender,420);
+  }};
+ }
+ const css=document.createElement('style');css.textContent=`#todoList.paper{border-radius:0!important;overflow:hidden!important;padding:0!important;background:repeating-linear-gradient(to bottom,#fffefa 0,#fffefa 31px,#cbd7e3 32px)!important}#todoList .item{height:32px!important;min-height:32px!important;max-height:32px!important;border-bottom:0!important;padding:0 3px!important;margin:0!important;grid-template-columns:22px minmax(0,1fr)!important;gap:3px!important;align-items:center!important}#todoList .item input[type=checkbox]{width:18px!important;height:18px!important;margin-left:2px!important}#todoList .item .itemtext{height:32px!important;min-height:32px!important;line-height:32px!important;align-items:center!important}#todoList .item .date{line-height:32px!important;margin-right:4px!important;padding-right:3px!important}`;
+ document.head.appendChild(css);
 })();
 </script></body></html>
