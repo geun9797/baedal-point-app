@@ -1075,4 +1075,18 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
  const itemTab=document.getElementById('v23ShowItems'),spaceTab=document.getElementById('v23ShowSpaces');if(itemTab)itemTab.textContent='재고확인';if(spaceTab)spaceTab.textContent='창고';
 })();
 
+
+/* v37 hotfix: reliable Tasks add action and stable inventory first-entry render */
+(function(){
+ const $=id=>document.getElementById(id);
+ const add=$('addTodo'), input=$('todoInput'), toggle=$('todoDateToggle'), date=$('todoDate');
+ if(add&&input&&toggle&&date){
+  const handler=function(e){e.preventDefault();e.stopImmediatePropagation();const text=input.value.trim();if(!text)return;const due=toggle.checked?date.value:'';data.todos.push({id:uid(),text,date:due,done:false,priority:'normal'});input.value='';toggle.checked=false;date.classList.add('hidden');date.value='';save();window.renderTodos?.();renderCalendar?.();renderWeekSummary?.();input.focus();};
+  add.addEventListener('click',handler,true);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add.click();}},true);
+ }
+ // Re-render inventory after the section has become visible so mobile grid measurements are valid.
+ const nativeOpen=window.openSection; if(typeof nativeOpen==='function'){window.openSection=function(id){nativeOpen(id);if(id==='inventory'){requestAnimationFrame(()=>{renderSpaces();if(typeof renderInventorySearch==='function')renderInventorySearch();});}};}
+ const css=document.createElement('style');css.textContent=`#inventoryAllList{width:100%;overflow-x:auto}#inventoryAllList .inventory-row{display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(0,.75fr) minmax(0,.55fr) minmax(0,.85fr) 32px!important;align-items:center!important;min-height:42px!important;white-space:nowrap!important}#inventoryAllList .inventory-row span{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;min-width:0!important}#inventoryAllList .inventory-row.head span{font-size:11px!important}#inventoryAllList .inventory-row:not(.head) span{font-size:12px!important}`;document.head.appendChild(css);
+})();
 </script></body></html>
