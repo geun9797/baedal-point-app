@@ -1022,8 +1022,8 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
  }
  // Move template manager to the very bottom of the History page.
  const hist31=$('workHistory'),manager31=$('v28TemplateManager');if(hist31&&manager31)hist31.append(manager31);
- // v31: put template manager at the very end of History.
- const manager=$('v28TemplateManager'),hist=$('workHistory');if(manager&&hist)hist.append(manager);
+ // v32: exact History order - recent records, search, template manager, monthly summary.
+ const manager=$('v28TemplateManager'),hist=$('workHistory');if(manager&&hist){const recent=$('recentWorkoutPanel'),search=$('exerciseSearchPanel'),month=$('workMonthPanel');if(recent)recent.style.order='0';if(search)search.style.order='1';manager.style.order='2';if(month)month.style.order='3';}
  disableAutofill(manager||document);
 })();
 
