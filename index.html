@@ -158,13 +158,13 @@ function openSection(id){document.getElementById('home').classList.toggle('hidde
  const cookingTitle=$('#cooking .topline h2');if(cookingTitle)cookingTitle.textContent='근식당';
  // Inventory is an Excel-like compact table: name / capacity / quantity / actions.
  const css=document.createElement('style');css.textContent=`
- #inventory .v25-item-row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.72fr) minmax(0,.55fr) 94px;gap:5px;align-items:center;padding:8px 5px;margin:0;border:0;border-bottom:1px solid #e5eaf0;border-radius:0;background:#fff;font-size:12px;min-width:0}
+ #inventory .v25-item-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr) minmax(0,.55fr) 88px;gap:5px;align-items:center;padding:7px 5px;margin:0;border:0;border-bottom:1px solid #e5eaf0;border-radius:0;background:#fff;font-size:12px;min-width:0}
  #inventory .v25-item-head{position:sticky;top:0;background:#f2f5f9;font-weight:800;color:#617087;border-bottom:1px solid #dce3eb;z-index:1}
- #inventory .v25-item-row>span{min-width:0;overflow-wrap:anywhere}
+ #inventory .v25-item-row>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  #inventory .v25-item-name{font-weight:700;color:#20334d}
  #inventory .v25-item-capacity,#inventory .v25-item-qty{color:#52647b}
  #inventory .v25-item-actions{display:flex;gap:3px;justify-content:flex-end;min-width:0}
- #inventory .v25-item-actions button{padding:5px 6px!important;font-size:11px!important;min-height:28px}
+ #inventory .v25-item-actions button{padding:4px 5px!important;font-size:10px!important;min-height:26px}
  #inventory .v23-inline-space{padding:8px}
  @media(max-width:380px){#inventory .v25-item-row{grid-template-columns:minmax(0,1.15fr) minmax(0,.62fr) minmax(0,.48fr) 82px;gap:3px;font-size:11px}#inventory .v25-item-actions button{padding:4px 5px!important;font-size:10px!important}}
  `;document.head.appendChild(css);
@@ -758,8 +758,8 @@ renderCalendar();renderWeekSummary();alert('모두 완료 처리했어요.')},
  const allSpaces=()=>Array.isArray(data.spaces)?data.spaces:[];
  function setView(view){$('v23ItemsView').classList.toggle('hidden',view!=='items');$('v23SpacesView').classList.toggle('hidden',view!=='spaces');$('v23SpaceContents').classList.add('hidden');$('v23ShowItems').classList.toggle('active',view==='items');$('v23ShowSpaces').classList.toggle('active',view==='spaces');currentOpenSpace=null;if(view==='items')drawItems();else drawSpaces()}
  function spaceName(id){return allSpaces().find(s=>s.id===id)?.name||'위치 미지정'}
- function drawItems(){const q=$('v23InvSearch').value.trim().toLocaleLowerCase();let arr=allItems().filter(x=>!q||String(x.name||'').toLocaleLowerCase().includes(q));arr.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));$('v23AllItems').innerHTML=arr.length?arr.map(itemRow).join(''):'<div class="empty">등록된 재고가 없어요. 재고 추가를 눌러 등록해 주세요.</div>'}
- function itemRow(x){return `<div class="v23-item-row v25-item-row"><div class="v23-item-topline"><strong>${escText(x.name)}</strong><span class="v23-item-qty">${escText(x.qty||'-')}</span></div><div class="v23-item-bottomline"><span class="v23-item-capacity">${escText(x.capacity||'-')}</span><span class="v23-item-actions v25-item-actions"><button class="soft" data-v23-edit-item="${escText(x.id)}">수정</button><button class="soft" data-v23-delete-item="${escText(x.id)}">삭제</button></span></div></div>`}
+ function drawItems(){const q=$('v23InvSearch').value.trim().toLocaleLowerCase();let arr=allItems().filter(x=>!q||String(x.name||'').toLocaleLowerCase().includes(q));arr.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));$('v23AllItems').innerHTML=arr.length?`<div class="v25-item-row v25-item-head"><span>이름</span><span>용량</span><span>갯수</span><span></span></div>`+arr.map(itemRow).join(''):'<div class="empty">등록된 재고가 없어요. 재고 추가를 눌러 등록해 주세요.</div>'}
+ function itemRow(x){return `<div class="v25-item-row"><span class="v25-item-name">${escText(x.name)}</span><span class="v25-item-capacity">${escText(x.capacity||'-')}</span><span class="v25-item-qty">${escText(x.qty||'-')}</span><span class="v25-item-actions"><button class="soft" data-v23-edit-item="${escText(x.id)}">수정</button><button class="soft" data-v23-delete-item="${escText(x.id)}">삭제</button></span></div>`}
  function drawSpaces(){const q=$('v23InvSearch').value.trim().toLocaleLowerCase();const arr=allSpaces().filter(s=>!q||String(s.name||'').toLocaleLowerCase().includes(q));$('v23SpaceList').innerHTML=arr.length?arr.map(sp=>`<div class="v23-space-row"><button class="v23-space-open" type="button" data-v23-open-space="${escText(sp.id)}">${sp.photo?`<img src="${sp.photo}" alt="">`:`<span class="v23-space-icon">${escText(sp.icon||'📦')}</span>`}<span class="v23-space-text"><strong>${escText(sp.name)}</strong><small>${allItems().filter(x=>x.spaceId===sp.id).length}개 물품</small></span></button><div class="v23-space-actions"><button type="button" class="soft" data-v23-edit-space="${escText(sp.id)}">설정</button></div></div>`).join(''):'<div class="empty">등록된 공간이 없어요. 공간 추가를 눌러 주세요.</div>'}
  function drawSpaceContents(id){const sp=allSpaces().find(s=>s.id===id);if(!sp)return;currentOpenSpace=id;const arr=allItems().filter(x=>x.spaceId===id).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko'));$('v23SpaceContents').classList.remove('hidden');$('v23SpaceContents').innerHTML=`<div class="v23-inline-space"><h3>${escText(sp.name)} · ${arr.length}개 물품</h3>${arr.length?`<div class="v25-item-row v25-item-head"><span>이름</span><span>용량</span><span>갯수</span><span></span></div>${arr.map(itemRow).join('')}`:'<div class="empty">이 공간에 등록된 물건이 없어요.</div>'}<button type="button" class="primary" style="width:100%;margin-top:8px" id="v23AddItemInSpace">＋ 이 공간에 물건 추가</button></div>`;$('v23AddItemInSpace').onclick=()=>openItemModal(null,id)}
  function refreshSpaceSelect(selected){$('v23ItemSpace').innerHTML=allSpaces().map(s=>`<option value="${escText(s.id)}">${escText(s.name)}</option>`).join('');if(selected)$('v23ItemSpace').value=selected}
@@ -1032,63 +1032,45 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
  const $=id=>document.getElementById(id);
  const pg=$('partPicker'); if(pg){pg.innerHTML=['가슴','어깨','이두','삼두','등','하체','기타','유산소'].map(p=>`<button type="button" class="part-chip" data-part="${p}">${p}</button>`).join('');}
  // Make the selected workout card show its setup memo, but hide memos in all previews/pickers.
- document.querySelectorAll('#v28TemplateList .v28-template-main small').forEach(el=>el.remove());
+ document.querySelectorAll('#v28TemplateList .v28-template-main small,#v19ExerciseOptions small,.v28-template-preview small').forEach(el=>el.remove());
  // Back stack: hardware/browser back navigates within sections before leaving the app.
  const stack=[];let current=document.querySelector('.section.active')?.id||'home',handling=false;
  const nativeOpen=window.openSection;
  if(nativeOpen)window.openSection=function(id){if(!handling&&id!==current&&id!=='home')stack.push(current);if(id==='home')stack.length=0;current=id;nativeOpen(id);history.pushState({lmSection:id},'',`#${id}`)};
  window.addEventListener('popstate',()=>{handling=true;const previous=stack.pop()||'home';current=previous;nativeOpen?.(previous);handling=false;history.pushState({lmSection:current},'',`#${current}`)});
- // Offline Excel-compatible XML workbook. No external library/CDN dependency.
+ // Reliable Excel 2003 Spreadsheet XML export/import, no external dependency.
  const sheets={Tasks:'todos',Purchase:'shops',Recipes:'recipes',Diary:'diaries',InventorySpaces:'spaces',Inventory:'inventory',WorkoutHistory:'workouts'};
  const backupPanel=document.querySelector('.app-settings .backupbar');
- if(backupPanel&&!document.getElementById('v34XlsxImport')){
+ if(backupPanel&&!document.getElementById('v36XlsxImport')){
   const exportBtn=document.createElement('button');exportBtn.className='soft';exportBtn.textContent='엑셀 백업';
-  const importBtn=document.createElement('button');importBtn.className='soft';importBtn.id='v34XlsxImport';importBtn.textContent='엑셀 복원';
-  const file=document.createElement('input');file.type='file';file.accept='.xml,.xls';file.style.display='none';document.body.appendChild(file);
+  const importBtn=document.createElement('button');importBtn.className='soft';importBtn.id='v36XlsxImport';importBtn.textContent='엑셀 복원';
+  const file=document.createElement('input');file.type='file';file.accept='.xml';file.style.display='none';document.body.appendChild(file);
   const xe=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const val=v=>typeof v==='object'&&v!==null?JSON.stringify(v):String(v??'');
-  exportBtn.onclick=()=>{try{let xml='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">';Object.entries(sheets).forEach(([name,key])=>{const arr=data[key]||[],cols=[...new Set(arr.flatMap(o=>Object.keys(o)))];xml+=`<Worksheet ss:Name="${xe(name)}"><Table>`;if(cols.length){xml+='<Row>'+cols.map(c=>`<Cell><Data ss:Type="String">${xe(c)}</Data></Cell>`).join('')+'</Row>';arr.forEach(o=>xml+='<Row>'+cols.map(c=>`<Cell><Data ss:Type="String">${xe(val(o[c]))}</Data></Cell>`).join('')+'</Row>')}else xml+='<Row><Cell><Data ss:Type="String">안내</Data></Cell><Cell><Data ss:Type="String">데이터 없음</Data></Cell></Row>';xml+='</Table></Worksheet>'});xml+=`<Worksheet ss:Name="DeliveryRaw"><Table><Row><Cell><Data ss:Type="String">배달백업JSON</Data></Cell></Row><Row><Cell><Data ss:Type="String">${xe(localStorage.getItem('baedalPointData')||'')}</Data></Cell></Row></Table></Worksheet></Workbook>`;const blob=new Blob([xml],{type:'application/vnd.ms-excel'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`생활관리-엑셀호환-${today()}.xls`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}catch(e){alert('엑셀 호환 파일 생성 실패')}};
+  const cell=v=>`<Cell><Data ss:Type="String">${xe(val(v))}</Data></Cell>`;
+  exportBtn.onclick=()=>{try{
+   let xml='<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:x="urn:schemas-microsoft-com:office:excel"><ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel"><WindowHeight>8000</WindowHeight><WindowWidth>16000</WindowWidth></ExcelWorkbook>';
+   Object.entries(sheets).forEach(([name,key])=>{const arr=Array.isArray(data[key])?data[key]:[],cols=[...new Set(arr.flatMap(o=>Object.keys(o||{})))];xml+=`<Worksheet ss:Name="${xe(name)}"><Table>`;
+    if(cols.length){xml+='<Row>'+cols.map(c=>cell(c)).join('')+'</Row>';arr.forEach(o=>xml+='<Row>'+cols.map(c=>cell(o?.[c])).join('')+'</Row>')}
+    else xml+='<Row>'+cell('안내')+cell('데이터 없음')+'</Row>';
+    xml+='</Table></Worksheet>'});
+   xml+=`<Worksheet ss:Name="DeliveryRaw"><Table><Row>${cell('배달백업JSON')}</Row><Row>${cell(localStorage.getItem('baedalPointData')||'')}</Row></Table></Worksheet></Workbook>`;
+   const blob=new Blob([xml],{type:'application/xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`생활관리-백업-${today()}.xml`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+  }catch(e){alert('엑셀 호환 XML 생성에 실패했습니다.')}};
   importBtn.onclick=()=>file.click();
-  file.onchange=()=>{
-    const f=file.files[0]; if(!f)return;
-    const reader=new FileReader();
-    reader.onload=()=>{
-      try{
-        const xml=new DOMParser().parseFromString(String(reader.result),'application/xml');
-        if(xml.querySelector('parsererror'))throw Error('parse');
-        const ns='urn:schemas-microsoft-com:office:spreadsheet',incoming={};
-        Object.entries(sheets).forEach(([name,key])=>{
-          const ws=[...xml.getElementsByTagNameNS(ns,'Worksheet')].find(w=>w.getAttribute('ss:Name')===name||w.getAttributeNS(ns,'Name')===name);
-          if(!ws)return;
-          const rows=[...ws.getElementsByTagNameNS(ns,'Row')].map(row=>[...row.getElementsByTagNameNS(ns,'Cell')].map(cell=>cell.getElementsByTagNameNS(ns,'Data')[0]?.textContent||''));
-          if(rows.length<2||rows[0][0]==='안내')return;
-          const headers=rows[0];
-          const records=[];
-          rows.slice(1).filter(row=>row.some(value=>value!=='')).forEach(row=>{
-            const obj={};
-            headers.forEach((header,i)=>{
-              let value=row[i]||'';
-              if(/^\s*[\[{]/.test(value)){try{value=JSON.parse(value)}catch{}}
-              obj[header]=value;
-            });
-            records.push(obj);
-          });
-          incoming[key]=records;
-        });
-        if(!Object.keys(incoming).length)throw Error('no sheets');
-        if(!confirm('파일에 포함된 시트 데이터를 교체할까요? 파일에 없는 시트는 유지됩니다.'))return;
-        Object.assign(data,incoming);save();renderTodos();renderShops();renderRecipes();renderWorkoutHistory();
-        const delivery=[...xml.getElementsByTagNameNS(ns,'Worksheet')].find(w=>w.getAttribute('ss:Name')==='DeliveryRaw');
-        if(delivery){const rows=[...delivery.getElementsByTagNameNS(ns,'Row')];const v=rows[1]?.getElementsByTagNameNS(ns,'Data')[0]?.textContent;if(v)localStorage.setItem('baedalPointData',v)}
-        alert('복원이 완료되었습니다.');
-      }catch(e){alert('복원 실패: 앱에서 만든 엑셀 호환 파일인지 확인해 주세요.')}finally{file.value=''}
-    };
-    reader.readAsText(f);
-  };
+  file.onchange=()=>{const f=file.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{
+   const xml=new DOMParser().parseFromString(String(reader.result),'application/xml');if(xml.querySelector('parsererror'))throw Error('parse');
+   const ns='urn:schemas-microsoft-com:office:spreadsheet',incoming={};const worksheets=[...xml.getElementsByTagNameNS(ns,'Worksheet')];
+   Object.entries(sheets).forEach(([name,key])=>{const ws=worksheets.find(w=>w.getAttribute('ss:Name')===name||w.getAttributeNS(ns,'Name')===name);if(!ws)return;
+    const rows=[...ws.getElementsByTagNameNS(ns,'Row')].map(row=>[...row.getElementsByTagNameNS(ns,'Cell')].map(c=>c.getElementsByTagNameNS(ns,'Data')[0]?.textContent??''));if(rows.length<2||rows[0][0]==='안내')return;
+    const headers=rows[0],records=[];rows.slice(1).filter(row=>row.some(v=>v!=='')).forEach(row=>{const obj={};headers.forEach((h,i)=>{let v=row[i]??'';if(typeof v==='string'&&(/^\s*[\[{]/.test(v)||v==='true'||v==='false'||v==='null')){try{v=JSON.parse(v)}catch{}}obj[h]=v});records.push(obj)});incoming[key]=records});
+   if(!Object.keys(incoming).length)throw Error('no sheets');if(!confirm('파일에 포함된 시트 데이터를 교체할까요? 파일에 없는 시트는 유지됩니다.'))return;Object.assign(data,incoming);save();renderTodos();renderShops();renderRecipes();renderWorkoutHistory();
+   const delivery=worksheets.find(w=>w.getAttribute('ss:Name')==='DeliveryRaw'||w.getAttributeNS(ns,'Name')==='DeliveryRaw');if(delivery){const rows=[...delivery.getElementsByTagNameNS(ns,'Row')],v=rows[1]?.getElementsByTagNameNS(ns,'Data')[0]?.textContent;if(v)localStorage.setItem('baedalPointData',v)}alert('복원이 완료되었습니다.');
+  }catch(e){alert('복원 실패: Excel XML 2003 형식인지 확인해 주세요.')}finally{file.value=''}};reader.readAsText(f)};
   backupPanel.append(exportBtn,importBtn);
  }
  const style=document.createElement('style');style.textContent='#todoList .item{gap:4px;padding:0 1px;min-height:37px;height:37px;align-items:center}#todoList .item input[type=checkbox]{margin:0;width:19px;height:19px}#todoList .item .itemtext{line-height:19px;display:flex;align-items:center;min-height:19px}#todoList .item .date{display:inline-flex;margin:0 0 0 auto;white-space:nowrap;font-size:10px;line-height:19px;align-items:center}#todoList .paper{background:repeating-linear-gradient(to bottom,#fffefa 0,#fffefa 36px,#dce5ee 37px);padding-top:2px;padding-bottom:3px}#todoList .paper .item{height:37px;min-height:37px;padding:0}#shopping .item{gap:4px;padding:0 2px;min-height:34px;height:34px;margin:0;align-items:center}#shopping .item input[type=checkbox]{margin:0;width:19px;height:19px}#shopping .paper{background:repeating-linear-gradient(to bottom,#fffefa 0,#fffefa 33px,#dce5ee 34px);padding:0 10px}#shopping .paper .item{height:34px;min-height:34px;padding:0}';document.head.appendChild(style);
- const polish=document.createElement('style');polish.textContent=`#todoList .item{display:grid!important;grid-template-columns:22px minmax(0,1fr)!important;height:40px!important;min-height:40px!important;max-height:40px!important;overflow:hidden!important;align-items:center!important;gap:4px!important;padding:0 1px!important}#todoList .item .itemtext{height:20px!important;min-height:20px!important;line-height:20px!important;display:flex!important;align-items:center!important;white-space:nowrap!important;overflow:hidden!important;min-width:0!important}#todoList .item .date{font-size:10px!important;white-space:nowrap!important;margin-left:auto!important;flex:0 0 auto!important}#todoList .paper{background:repeating-linear-gradient(to bottom,#fffefa 0,#fffefa 39px,#c3d2e3 40px)!important;padding-top:0!important;padding-bottom:0!important}#todoList .paper .item{height:40px!important;min-height:40px!important;max-height:40px!important}#todoList .todo-priority{display:none!important}.v23-item-row{display:block!important;padding:8px 10px!important;margin:6px 0!important}.v23-item-topline,.v23-item-bottomline{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;min-width:0!important}.v23-item-topline strong{font-size:14px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;min-width:0!important}.v23-item-qty{font-size:13px!important;white-space:nowrap!important;flex:0 0 auto!important}.v23-item-bottomline{margin-top:4px!important}.v23-item-capacity{font-size:12px!important;color:#64748b!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.v23-item-actions{display:flex!important;gap:4px!important;flex:0 0 auto!important}.v23-item-actions button{padding:4px 8px!important;font-size:12px!important;min-height:27px!important}`;document.head.appendChild(polish);
+ const polish=document.createElement('style');polish.textContent=`#todoList.paper{background:#fffefa!important;padding:0!important}#todoList .item{box-sizing:border-box!important;display:grid!important;grid-template-columns:22px minmax(0,1fr)!important;height:29px!important;min-height:29px!important;max-height:29px!important;overflow:hidden!important;align-items:center!important;gap:4px!important;padding:0 1px!important;margin:0!important;border-bottom:1px solid #b9c9da!important}#todoList .item input[type=checkbox]{width:18px!important;height:18px!important;margin:0!important;align-self:center!important}#todoList .item .itemtext{box-sizing:border-box!important;height:29px!important;min-height:29px!important;line-height:29px!important;display:flex!important;align-items:center!important;white-space:nowrap!important;overflow:hidden!important;min-width:0!important;padding:0!important}#todoList .item .date{font-size:10px!important;white-space:nowrap!important;margin-left:auto!important;flex:0 0 auto!important;line-height:29px!important}#todoList .todo-priority{display:none!important}.v23-item-row{display:block!important;padding:8px 10px!important;margin:6px 0!important}.v23-item-topline,.v23-item-bottomline{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;min-width:0!important}.v23-item-topline strong{font-size:14px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;min-width:0!important}.v23-item-qty{font-size:13px!important;white-space:nowrap!important;flex:0 0 auto!important}.v23-item-bottomline{margin-top:4px!important}.v23-item-capacity{font-size:12px!important;color:#64748b!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.v23-item-actions{display:flex!important;gap:4px!important;flex:0 0 auto!important}.v23-item-actions button{padding:4px 8px!important;font-size:12px!important;min-height:27px!important}`;document.head.appendChild(polish);
  // Relabel the inventory view switch consistently, including recreated controls.
  const itemTab=document.getElementById('v23ShowItems'),spaceTab=document.getElementById('v23ShowSpaces');if(itemTab)itemTab.textContent='재고확인';if(spaceTab)spaceTab.textContent='창고';
 })();
