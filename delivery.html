@@ -36,19 +36,7 @@ button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:not-allowed
   <div class="days" id="days"></div>
   <section id="noMission" class="card"><h2>미션 시작</h2><p class="muted small">새 미션의 목표 포인트와 보상 금액을 설정해 주세요.</p><button class="primary" id="addMission" style="width:100%">＋ 새 미션 시작</button></section>
   <section id="missionView" class="hidden">
-   <section class="card">
-    <div class="row between"><h2>미션 설정</h2><div class="mission-actions"><button class="tiny ghost" id="finishMission">미션 종료</button></div></div>
-    <div class="row">
-     <div class="field grow"><label for="goal">목표 포인트 (선택)</label><input id="goal" type="number" min="1" step="1" inputmode="decimal" placeholder="예: 115"></div>
-     <div class="field grow"><label for="goalCount">목표 건수 (선택)</label><input id="goalCount" type="number" min="1" step="1" inputmode="numeric" placeholder="예: 10"></div><div class="field grow"><label for="amount">달성 금액 (원)</label><input id="amount" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 85000"></div>
-    </div>
-    <div class="small muted">누적 포인트를 올림한 값이 목표 포인트 이상이면 성공입니다.</div>
-   </section>
-   <section class="card">
-    <div class="row between"><h2>포인트 목록</h2><span class="small muted" id="dayLabel"></span></div>
-    <div class="point-list" id="pointList"></div>
-    <div class="row" style="margin-top:12px"><input id="newPoint" type="number" min=".1" step=".1" inputmode="decimal" placeholder="포인트 입력 (예: 12.5)"><button class="primary" id="addPoint">추가</button></div>
-   </section>
+
    <section class="card">
     <div class="stats">
      <div class="stat"><div class="label">총 배달 건수</div><div class="num" id="jobCount">0건</div><div class="stepper" style="justify-content:center;margin-top:8px"><button type="button" id="jobMinus">− 1건</button><button type="button" id="jobPlus">＋ 1건</button></div></div>
@@ -60,6 +48,21 @@ button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:not-allowed
     <div class="row between" style="margin:5px 0 10px"><strong style="font-size:25px" id="progressText">0.0P</strong><span class="small muted" id="ceilText">올림 결과: 0P</span></div>
     <div class="progress"><div class="bar" id="progressBar" style="width:0%"></div></div>
     <div class="small muted" id="remaining" style="margin-top:9px"></div>
+   </section>
+   <section class="card">
+    <div class="row between"><h2>포인트 목록</h2><span class="small muted" id="dayLabel"></span></div>
+    <div class="point-list" id="pointList"></div>
+    <div class="row" style="margin-top:12px"><input id="newPoint" type="number" min=".1" step=".1" inputmode="decimal" placeholder="포인트 입력 (예: 12.5)"><button class="primary" id="addPoint">추가</button></div>
+   </section>
+
+
+   <section class="card">
+    <div class="row between"><h2>미션 설정</h2><div class="mission-actions"><button class="tiny ghost" id="finishMission">미션 종료</button></div></div>
+    <div class="row">
+     <div class="field grow"><label for="goal">목표 포인트 (선택)</label><input id="goal" type="number" min="1" step="1" inputmode="decimal" placeholder="예: 115"></div>
+     <div class="field grow"><label for="goalCount">목표 건수 (선택)</label><input id="goalCount" type="number" min="1" step="1" inputmode="numeric" placeholder="예: 10"></div><div class="field grow"><label for="amount">달성 금액 (원)</label><input id="amount" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 85000"></div>
+    </div>
+    <div class="small muted">누적 포인트를 올림한 값이 목표 포인트 이상이면 성공입니다.</div>
    </section>
   </section>
   <section class="card hidden" id="saveCard">
